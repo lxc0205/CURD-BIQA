@@ -53,7 +53,7 @@ if __name__ == "__main__":
     parser.add_argument('--inputFileSet',dest='inputFileSet', type=str, nargs='+', help='Input file set.')
     parser.add_argument('--outputFile', dest='outputFile', type=str, default='./curd_fitting.txt', help='Output flie dir.')
     parser.add_argument('--method', dest='method', type=str, default='dbcnn', help='Support methods: clipiqa|clipiqa+|ilniqe|wadiqam_nr|dbcnn|paq2piq|hyperiqa|tres|tres-flive|tres-koniq|maniqa|maniqa-kadid|maniqa-koniq|maniqa-pipal')
-    parser.add_argument('--save_num', dest='save_num', type=int, default=5000000, help='Save numbers.')
+    parser.add_argument('--save_num', dest='save_num', type=int, default=500000, help='Save numbers.')
     config = parser.parse_args()
     print(f'Basic method:{config.method},\ttraining Files:{config.inputFileSet},\tOutput File:{config.outputFile}')
     main(config)

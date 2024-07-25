@@ -35,7 +35,7 @@ Some available options:
 * `--method`: basic method.
 * `--inputFileSet`: input file names in multiscale outputs folder, support names:  koniq-10k.txt | live.txt | csiq.txt | tid2013.txt.
 * `--outputFile`: output file names.
-* `--save_num`: Save numbers, default number is 50000.
+* `--save_num`: Save numbers, default number is 5000000.
 
 Outputs:
 * `output file`: .\outputs\\<method\>\curd outputs\\\<outputFile>.txt

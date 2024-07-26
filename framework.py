@@ -3,15 +3,13 @@ import torch
 import pyiqa
 import random   
 import argparse
+import warnings
 import torchvision
 import numpy as np
 from tqdm import tqdm
-from curd import calculate_sp
-from data_loader import DataLoader, folder_path, img_num
+from curd import calculate_sp, prediction, expand2
+from data_loader import DataLoader, normalize_mos, folder_path, img_num
 
-
-from curd import prediction, expand2
-from data_loader import normalize_mos
 
 class IQA_framework():
     def __init__(self, method):
@@ -19,9 +17,9 @@ class IQA_framework():
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.func = pyiqa.create_metric(method, device=device)
         if self.func.lower_better:
-            print('The lower value of the metric is better.')
+            print(f'The lower value of the metric {method} is better.')
         else:
-            print('The higher value of the metric is better.')
+            print(f'The higher value of the metric {method} is better.')
         # Load VGG model
         self.net = torchvision.models.vgg16(weights = torchvision.models.VGG16_Weights.IMAGENET1K_V1).cuda().features.eval()
         # Feature Layers ID
@@ -133,4 +131,6 @@ if __name__ == '__main__':
     config = parser.parse_args()
     print(f'Test method:{config.method},\tTest method:{config.dataset},\tUsing multiscale framework:{config.curd},\tPrediction mode:{not (config.index is None) and not (config.beta is None)}')
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    # 忽略所有警告
+    warnings.filterwarnings('ignore')
     main(config)

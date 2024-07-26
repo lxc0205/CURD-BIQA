@@ -5,6 +5,63 @@ from tqdm import tqdm
 from data_loader import loadMssimMos
 from curd import CURD, expand2, calculate_sp, regression, prediction, sort
 
+# train mode 1: train on koniq-10k, test on all datasets
+def regression1(inputFileSet, outputFile, temp_file_path, curd, sorted_matrix, SAVE_NUM):
+    Mssim_list = []
+    mos_list = []
+    for dataset in inputFileSet:
+        Mssim_temp, mos_temp = loadMssimMos({dataset})
+        Mssim_list.append(expand2(Mssim_temp))
+        mos_list.append(mos_temp)
+    matrix = np.zeros((SAVE_NUM, 2*curd.NO + 10))
+    for epoch, row in tqdm(enumerate(sorted_matrix), total=len(sorted_matrix)):
+        plcc_list = [0]*4
+        srcc_list = [0]*4
+        for i in range(len(Mssim_list)):
+            index = row[:curd.NO].astype(int)
+            beta = regression(Mssim_list[i], mos_list[i], index)
+            yhat = prediction(Mssim_list[i], beta, index)
+            plcc_list[i], srcc_list[i] = calculate_sp(mos_list[i].squeeze(), yhat.squeeze()) 
+        # 0 1 2 3 4 5 6    7    8 9 10 11 12 13 14    15 16 17 18     19 20 21 22             23
+        # ----index----   sw    -------beta-------        srcc            plcc              sum/8
+        matrix[epoch] = np.concatenate((row[:curd.NO+1], beta.squeeze(), plcc_list, srcc_list,[(sum(plcc_list)+sum(srcc_list))/8]))
+    print(f'Number of regression items: {epoch}\n')
+    # 排序,结果保存到文件
+    matrix = sort(matrix, order="descending", row = 23)[:SAVE_NUM, :]
+    np.savetxt(outputFile, matrix, fmt=['%d']*curd.NO + ['%f']*(matrix.shape[1]-curd.NO), delimiter='\t')
+
+    if os.path.exists(temp_file_path):
+        os.remove(temp_file_path)
+
+# train mode 2
+def regression2(inputFileSet, outputFile, temp_file_path, curd, sorted_matrix, SAVE_NUM):
+    Mssim_list = []
+    mos_list = []
+    for dataset in inputFileSet:
+        Mssim_temp, mos_temp = loadMssimMos({dataset})
+        Mssim_list.append(expand2(Mssim_temp))
+        mos_list.append(mos_temp)
+    matrix = np.zeros((SAVE_NUM, 2*curd.NO + 10))
+    for epoch, row in tqdm(enumerate(sorted_matrix), total=len(sorted_matrix)):
+        plcc_list = [0]*4
+        srcc_list = [0]*4
+        beta = [[0]*7]*4
+        for i in range(len(Mssim_list)):
+            index = row[:curd.NO].astype(int)
+            beta[i] = regression(Mssim_list[i], mos_list[i], index)
+            yhat = prediction(Mssim_list[i], beta, index)
+            plcc_list[i], srcc_list[i] = calculate_sp(mos_list[i].squeeze(), yhat.squeeze()) 
+        # 0 1 2 3 4 5 6    7    8 9 10 11 12 13 14    15 16 17 18     19 20 21 22             23
+        # ----index----   sw    -------beta-------        srcc            plcc              sum/8
+        matrix[epoch] = np.concatenate((row[:curd.NO+1], beta[0].squeeze(), beta[1].squeeze(), beta[2].squeeze(), beta[3].squeeze(), plcc_list, srcc_list,[(sum(plcc_list)+sum(srcc_list))/8]))
+    print(f'Number of regression items: {epoch}\n')
+    # 排序,结果保存到文件
+    matrix = sort(matrix, order="descending", row = 23)[:SAVE_NUM, :]
+    np.savetxt(outputFile, matrix, fmt=['%d']*curd.NO + ['%f']*(matrix.shape[1]-curd.NO), delimiter='\t')
+
+    if os.path.exists(temp_file_path):
+        os.remove(temp_file_path)
+
 def main(config):
     SAVE_NUM = config.save_num
     # Load data
@@ -19,33 +76,11 @@ def main(config):
     sorted_matrix = curd.process(SAVE_NUM)
     
     # Perform regression evaluation and save data
-    Mssim_list = []
-    mos_list = []
-    for dataset in inputFileSet:
-        Mssim_temp, mos_temp = loadMssimMos({dataset})
-        Mssim_list.append(expand2(Mssim_temp))
-        mos_list.append(mos_temp)
+    regression1(inputFileSet, outputFile, temp_file_path, curd, sorted_matrix, SAVE_NUM)
+    # regression2(inputFileSet, outputFile, temp_file_path, curd, sorted_matrix, SAVE_NUM)
 
-    matrix = np.zeros((SAVE_NUM, 2*curd.NO + 10))
-    for epoch, row in tqdm(enumerate(sorted_matrix), total=len(sorted_matrix)):
-        plcc_list = [0, 0, 0, 0]
-        srcc_list = [0, 0, 0, 0]
-        for i in range(len(Mssim_list)):
-            index = row[:curd.NO].astype(int)
-            beta = regression(Mssim_list[i], mos_list[i], index)
-            yhat = prediction(Mssim_list[i], beta, index)
-            plcc_list[i], srcc_list[i] = calculate_sp(mos_list[i].squeeze(), yhat.squeeze())
-        # 0 1 2 3 4 5 6    7    8 9 10 11 12 13 14    15 16 17 18     19 20 21 22             23
-        # ----index----   sw    -------beta-------        srcc            plcc              sum/8
-        matrix[epoch] = np.concatenate((row[:curd.NO+1], beta.squeeze(), plcc_list, srcc_list,[(sum(plcc_list)+sum(srcc_list))/8]))
-    print(f'Number of regression items: {epoch}\n')
 
-    # 排序,结果保存到文件
-    matrix = sort(matrix, order="descending", row = 23)[:SAVE_NUM, :]
-    np.savetxt(outputFile, matrix, fmt=['%d']*curd.NO + ['%f']*(matrix.shape[1]-curd.NO), delimiter='\t')
 
-    if os.path.exists(temp_file_path):
-        os.remove(temp_file_path)
 
 if __name__ == "__main__":
     print(f'The curd iqa process has started...\n')

@@ -226,41 +226,18 @@ def calculate_sp(y, yhat):
         print("The srcc correlation is not significant.")
     return np.abs(plcc), np.abs(srcc)
 
-def expand1(Mssim):
-    Mssim_expand = np.hstack((
-        Mssim,
-        Mssim**2,
-        np.sqrt(Mssim),
-        Mssim**3,
-        Mssim**(1/3),
-        np.log(Mssim),
-        np.power(2, Mssim),
-        np.exp(Mssim)
-    ))
+def expand(Mssim, mode):
+    if mode == 'mode1':
+        Mssim_expand = np.hstack((
+            Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim),                  np.power(2, Mssim),     np.exp(Mssim)
+        ))
+    elif mode == 'mode2':
+        Mssim_expand = np.hstack((
+            Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim+1) / np.log(2),    np.power(2, Mssim) - 1, (np.exp(Mssim)-1) / (np.exp(1)-1)
+        ))
 
-    if np.isnan(Mssim_expand).any():
-        print("Array contains NaN.")
-    if np.isinf(Mssim_expand).any():
-        print("Array contains Inf.")
-
-    return Mssim_expand
-
-def expand2(Mssim):
-    Mssim_expand = np.hstack((
-        Mssim,                              # Mssim
-        Mssim**2,                           # Mssim**2
-        np.sqrt(Mssim),                     # np.sqrt(Mssim)
-        Mssim**3,                           # Mssim**3
-        Mssim**(1/3),                       # Mssim**(1/3)
-        np.log(Mssim+1) / np.log(2),        # np.log(Mssim)
-        np.power(2, Mssim) - 1,             # np.power(2, Mssim)
-        (np.exp(Mssim)-1) / (np.exp(1)-1)   # np.exp(Mssim)
-    ))
-
-    if np.isnan(Mssim_expand).any():
-        print("Array contains NaN.")
-    if np.isinf(Mssim_expand).any():
-        print("Array contains Inf.")
+    if np.isnan(Mssim_expand).any(): print("expand function: Array contains NaN.")
+    if np.isinf(Mssim_expand).any(): print("expand function: Array contains Inf.")
 
     return Mssim_expand
 

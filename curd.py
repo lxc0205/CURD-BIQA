@@ -22,7 +22,7 @@ class CURD:
 
     def process(self, save_num):
         # self.Mssim_expand = expand1(self.Mssim)
-        self.Mssim_expand = expand2(self.Mssim)
+        self.Mssim_expand = expand(self.Mssim, 'mode2')
         self.pearson_corr()
         Rhere = np.zeros((self.NO+1, self.NO+1))
         Rxy = np.zeros((self.NO+1, self.NO+1))
@@ -172,7 +172,7 @@ class CURD:
 
     def process_det(self, save_num):
         # self.Mssim_expand = expand1(self.Mssim)
-        self.Mssim_expand = expand2(self.Mssim)
+        self.Mssim_expand = expand(self.Mssim, 'mode2')
         self.pearson_corr()
         variable_num = self.correlation_matrix.shape[0] - 1
         comb_num = comb(variable_num, self.NO)

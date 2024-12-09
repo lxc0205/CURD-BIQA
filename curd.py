@@ -2,8 +2,10 @@ import numpy as np
 from math import comb
 from tqdm import tqdm
 from scipy.linalg import det
+import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy.stats import spearmanr, pearsonr
+
 
 class CURD:
     def __init__(self, Mssim, mos, output_flie_name='./outputs/curd_temp.txt'):
@@ -21,8 +23,7 @@ class CURD:
          self.correlation_matrix = np.corrcoef(np.concatenate((self.Mssim_expand, self.mos[:, np.newaxis]), axis=1).T)
 
     def process(self, save_num):
-        # self.Mssim_expand = expand1(self.Mssim)
-        self.Mssim_expand = expand(self.Mssim, 'mode2')
+        self.Mssim_expand = expand(self.Mssim)
         self.pearson_corr()
         Rhere = np.zeros((self.NO+1, self.NO+1))
         Rxy = np.zeros((self.NO+1, self.NO+1))
@@ -171,8 +172,7 @@ class CURD:
         return sorted_matrix
 
     def process_det(self, save_num):
-        # self.Mssim_expand = expand1(self.Mssim)
-        self.Mssim_expand = expand(self.Mssim, 'mode2')
+        self.Mssim_expand = expand(self.Mssim)
         self.pearson_corr()
         variable_num = self.correlation_matrix.shape[0] - 1
         comb_num = comb(variable_num, self.NO)
@@ -217,6 +217,17 @@ def prediction(Mssim, beta, index):
     yhat = Mssim_s @ beta
     return yhat
 
+def plot_y_yhat(pred, label):
+    fig, ax = plt.subplots()
+    ax.plot(range(0, pred.shape[0]), label, label='True Values', marker='o')
+    ax.plot(range(0, pred.shape[0]), pred, label='Predicted Values', marker='x')
+    ax.set_title('Comparison of True and Predicted Values')
+    ax.set_xlabel('Index')
+    ax.set_ylabel('Value')
+    ax.legend()
+    print(f'mse: {np.mean((pred - label) ** 2)}')
+    plt.show()
+
 def calculate_sp(y, yhat):
     plcc, p_PLCC = pearsonr(y, yhat)
     srcc, p_SRCC = spearmanr(y, yhat)
@@ -226,24 +237,67 @@ def calculate_sp(y, yhat):
         print("The srcc correlation is not significant.")
     return np.abs(plcc), np.abs(srcc)
 
-def expand(Mssim, mode):
-    if mode == 'mode1':
-        Mssim_expand = np.hstack((
-            Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim),                  np.power(2, Mssim),     np.exp(Mssim)
-        ))
-    elif mode == 'mode2':
-        Mssim_expand = np.hstack((
-            Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim+1) / np.log(2),    np.power(2, Mssim) - 1, (np.exp(Mssim)-1) / (np.exp(1)-1)
-        ))
+def expand(Mssim):
+    Mssim_expand = np.hstack((
+        Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim+1) / np.log(2),    np.power(2, Mssim) - 1, (np.exp(Mssim)-1) / (np.exp(1)-1)
+    #     Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim),                  np.power(2, Mssim),     np.exp(Mssim)
+    ))
 
-    if np.isnan(Mssim_expand).any(): print("expand function: Array contains NaN.")
-    if np.isinf(Mssim_expand).any(): print("expand function: Array contains Inf.")
+    if np.isnan(Mssim_expand).any(): print("expand function warning: Array contains NaN.")
+    if np.isinf(Mssim_expand).any(): print("expand function warning: Array contains Inf.")
 
     return Mssim_expand
 
-if __name__ == "__main__":
-    print('curd demo....')
-    from data_loader import loadMssimMos_single
-    Mssim, mos = loadMssimMos_single("./train_data.txt")
-    curd = CURD(Mssim, mos, './curd_output.txt')
-    curd_matrix = curd.process()
+def index2func(index, data_dim = 6):
+    value_list = ['x0', 'x1', 'x2', 'x3', 'x4', 'x5'] # decide by col
+    value_latex_list = ['{\\textbf{x}_0}', '{\\textbf{x}_1}', '{\\textbf{x}_2}', '{\\textbf{x}_3}', '{\\textbf{x}_4}', '{\\textbf{x}_5}'] # decide by col
+    row = index // data_dim
+    col = index % data_dim
+
+    value = value_list[col]
+    value_latex = value_latex_list[col]
+    if row == 0:
+        func = value
+        func_latex = value_latex
+    elif row == 1:
+        func = value + '^2'
+        func_latex = value_latex + '^2'
+    elif row == 2:
+        func = 'sqrt(' + value + ')'
+        func_latex = '\\sqrt{' + value_latex + '}'
+    elif row == 3:
+        func = value + '^3'
+        func_latex = value_latex + '^3'
+    elif row == 4:
+        func = '(' + value + ')^(1/3)'
+        func_latex = '\\sqrt[3]'+ value_latex
+    elif row == 5:
+        func = 'ln(' + value + '+1)/ln2'
+        func_latex = '\\frac{ln('+ value_latex +'+1)}{ln2}'
+    elif row == 6:
+        func = '2^' + value + '-1'
+        func_latex = '2^' + value_latex + '-1'
+    elif row == 7:
+        func = '(e^' + value + '-1)/(e-1)'
+        func_latex = '\\frac{e^' + value_latex + '-1}{e-1}'
+
+    return row, col, func, func_latex
+
+def beta_index_to_function(index, beta):
+    assert len(index) == len(beta)
+    function = 'Q = '
+    function_latex = '\\boldsymbol{Q}_{score} = '
+    for i in range(len(index)):
+        row, col, func, func_latex = index2func(index[i])
+        if beta[i] < 0:  
+            function += f"{beta[i]}*{func}"
+        elif beta[i] > 0:
+            function += f"+{beta[i]}*{func}"
+        function_latex += f"\\beta_{i}{func_latex}+"
+        print(f"Index {index[i]} indicates the no.{row+1} func, the no.{col+1} variables, the func expression is {func}") 
+
+    if function[4] == '+':
+        function = function[:4] + function[5:]
+    function_latex = function_latex[:-1]
+    return function, function_latex
+

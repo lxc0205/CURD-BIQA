@@ -82,43 +82,6 @@ class LIVEFolder(data.Dataset):
         return filename
 
 
-class LIVEChallengeFolder(data.Dataset):
-
-    def __init__(self, root, index, transform, patch_num):
-
-        imgpath = scipy.io.loadmat(os.path.join(root, 'Data', 'AllImages_release.mat'))
-        imgpath = imgpath['AllImages_release']
-        imgpath = imgpath[7:1169]
-        mos = scipy.io.loadmat(os.path.join(root, 'Data', 'AllMOS_release.mat'))
-        labels = mos['AllMOS_release'].astype(np.float32)
-        labels = labels[0][7:1169]
-
-        sample = []
-        for i, item in enumerate(index):
-            for aug in range(patch_num):
-                sample.append((os.path.join(root, 'Images', imgpath[item][0][0]), labels[item]))
-
-        self.samples = sample
-        self.transform = transform
-
-    def __getitem__(self, index):
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: (sample, target) where target is class_index of the target class.
-        """
-        path, target = self.samples[index]
-        sample = pil_loader(path)
-        sample = self.transform(sample)
-        return sample, target
-
-    def __len__(self):
-        length = len(self.samples)
-        return length
-
-
 class CSIQFolder(data.Dataset):
 
     def __init__(self, root, index, transform, patch_num):
@@ -210,57 +173,6 @@ class Koniq_10kFolder(data.Dataset):
         length = len(self.samples)
         return length
 
-
-class BIDFolder(data.Dataset):
-
-    def __init__(self, root, index, transform, patch_num):
-
-        imgname = []
-        mos_all = []
-
-        xls_file = os.path.join(root, 'DatabaseGrades.xlsx')
-        workbook = load_workbook(xls_file)
-        booksheet = workbook.active
-        rows = booksheet.rows
-        count = 1
-        for row in rows:
-            count += 1
-            img_num = (booksheet.cell(row=count, column=1).value)
-            img_name = "DatabaseImage%04d.JPG" % (img_num)
-            imgname.append(img_name)
-            mos = (booksheet.cell(row=count, column=2).value)
-            mos = np.array(mos)
-            mos = mos.astype(np.float32)
-            mos_all.append(mos)
-            if count == 587:
-                break
-
-        sample = []
-        for i, item in enumerate(index):
-            for aug in range(patch_num):
-                sample.append((os.path.join(root, imgname[item]), mos_all[item]))
-
-        self.samples = sample
-        self.transform = transform
-
-    def __getitem__(self, index):
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: (sample, target) where target is class_index of the target class.
-        """
-        path, target = self.samples[index]
-        sample = pil_loader(path)
-        sample = self.transform(sample)
-        return sample, target
-
-    def __len__(self):
-        length = len(self.samples)
-        return length
-
-
 class TID2013Folder(data.Dataset):
 
     def __init__(self, root, index, transform, patch_num):
@@ -331,4 +243,5 @@ def getTIDFileName(path, suffix):
 def pil_loader(path):
     with open(path, 'rb') as f:
         img = Image.open(f)
-        return img.convert('RGB')
+        img = img.convert('RGB')
+        return img

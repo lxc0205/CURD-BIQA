@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -42,44 +43,42 @@ def regressing(inputFileSet, outputFile, NO, sorted_matrix, savenum, norm_R_set)
 
 def main(config):
     # Load data
-    output_Path = f'./outputs/{config.method}/'
-    inputFileSet = [output_Path + 'multiscale outputs/' + item for item in config.inputFile_set]
-    outputFile = output_Path + 'curd outputs/' + config.outputFile
+    method_name = config['method']
+    output_Path = f'./outputs/{method_name}/'
+    inputFileSet = [output_Path + 'multiscale outputs/' + item for item in config['inputFile_set']]
+    outputFile = output_Path + 'curd outputs/' + config['outputFile']
     if not os.path.exists(output_Path + 'curd outputs/'):
         os.makedirs(output_Path + 'curd outputs/')
 
-    Mssim ,mos = loadMssimMos(inputFileSet)
+    Mssim, mos = loadMssimMos(inputFileSet)
 
     temp_file = output_Path + 'curd_temp.txt'
     curd = CURD(Mssim, mos.squeeze(1), temp_file)
     if os.path.exists(temp_file):
         sorted_matrix = np.loadtxt(temp_file)
     else:
-        sorted_matrix = curd.process(config.save_num)
+        sorted_matrix = curd.process(config['save_num'])
         
     # Perform regression evaluation and save data
-    regressing(inputFileSet, outputFile, curd.NO, sorted_matrix, config.save_num, config.norm_R_set)
+    regressing(inputFileSet, outputFile, curd.NO, sorted_matrix, config['save_num'], config['norm_R_set'])
 
-    if config.rm_cache:
+    if config['rm_cache']:
         print(f'Remove cache files...')
         if os.path.exists(temp_file):
             os.remove(temp_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', dest='method', type=str, required=True, default='dbcnn', help='Support methods: clipiqa+|wadiqam_nr|dbcnn|paq2piq|hyperiqa|tres|tres-flive|tres-koniq|maniqa|maniqa-kadid|maniqa-koniq|maniqa-pipal')
-    parser.add_argument('--norm_R_set', dest='norm_R_set', type=int, nargs='+', default=None, help='The range of mssim normalization.')
-    parser.add_argument('--inputFile_set',dest='inputFile_set', type=str, required=True, nargs='+', help='Input file set.')
-    parser.add_argument('--outputFile', dest='outputFile', type=str, required=True, default='./curd_fitting.txt', help='Output flie path.')
-    parser.add_argument('--save_num', dest='save_num', type=int, default=500000, help='Save numbers.')
-    parser.add_argument('--rm_cache', dest='rm_cache', action='store_true', help='The flag of remove temp files curd_temp.txt.')
-    config = parser.parse_args()
-    print(f'The curd iqa process has started...\n')
+    parser.add_argument('--config', type=str, required=True, help='Path to the JSON configuration file.')
+    args = parser.parse_args()
+
+    dir = './configs/curd_iqa/'
+    with open(dir + args.config, 'r') as f:
+        config = json.load(f)
 
     # print configs
-    config_dict = vars(config)
     print("Configs:")
-    for key, value in sorted(config_dict.items()):
+    for key, value in sorted(config.items()):
         print(f"{key.replace('_', ' ').title()}: {value}")
 
     # print time

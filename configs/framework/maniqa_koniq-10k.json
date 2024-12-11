@@ -1,0 +1,6 @@
+{
+    "multiscale": false,
+    "method": "maniqa-koniq",
+    "pyiqa": true,
+    "dataset": "koniq-10k"
+}

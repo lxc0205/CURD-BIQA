@@ -1,6 +1,7 @@
 import os
 import json
 import argparse
+import warnings
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
@@ -68,14 +69,14 @@ def main(config):
             os.remove(temp_file)
 
 if __name__ == "__main__":
+    warnings.filterwarnings('ignore')
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True, help='Path to the JSON configuration file.')
     args = parser.parse_args()
 
-    dir = './configs/curd_iqa/'
-    with open(dir + args.config, 'r') as f:
+    with open('./configs/curd/' + args.config + '.json', 'r') as f:
         config = json.load(f)
-
+    
     # print configs
     print("Configs:")
     for key, value in sorted(config.items()):
@@ -84,7 +85,5 @@ if __name__ == "__main__":
     # print time
     now = datetime.now()
     print(now.strftime("%Y-%m-%d %H:%M:%S"))
-    
     main(config)
-
     print(f'The curd iqa finished!')

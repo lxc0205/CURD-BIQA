@@ -9,6 +9,7 @@ import warnings
 import torchvision  
 import numpy as np
 from tqdm import tqdm
+from datetime import datetime
 from curd import calculate_sp, prediction, expand, beta_index_to_function
 from data_loader import DataLoader, normalize_Mssim, normalize_mos, folder_path, img_num
 
@@ -161,19 +162,19 @@ def main(config):
 
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     warnings.filterwarnings('ignore')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True, help='Path to the JSON configuration file.')
     args = parser.parse_args()
 
-    dir = './configs/framework/'
-    with open(dir + args.config, 'r') as f:
+    with open('./configs/multiscale/' + args.config + '.json', 'r') as f:
         config = json.load(f)
 
     print("Configs:")
     for key, value in sorted(config.items()):
         print(f"{key.replace('_', ' ').title()}: {value}")
 
+    # print time
+    now = datetime.now()
+    print(now.strftime("%Y-%m-%d %H:%M:%S"))
     main(config)

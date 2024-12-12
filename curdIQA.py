@@ -10,8 +10,7 @@ from curd import CURD, expand, calculate_sp, regression, prediction, sort
 
 
 # BL = np.array([0.9680,0.9610,0.9830,0.9820,0.9430,0.9370,0.9460,0.9300])
-BL_plcc = np.array([0.9680,0.9830,0.9430,0])
-BL_srcc = np.array([0.9610,0.9820,0.9370,0])
+BL_plcc, BL_srcc = np.array([0.9680,0.9830,0.9430,0]), np.array([0.9610,0.9820,0.9370,0])
 
 def regressing(inputFileSet, outputFile, NO, sorted_matrix, savenum, norm_R_set):
     Mssim_list, mos_list = [], []

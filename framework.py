@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from curd import calculate_sp, prediction, expand, beta_index_to_function
-from data_loader import DataLoader, normalize_Mssim, normalize_mos, folder_path, img_num
+from dataLoader import DataLoader, normalize_Mssim, normalize_mos, folder_path, img_num
 
 
 class IQA_framework():

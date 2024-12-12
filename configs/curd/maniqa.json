@@ -1,8 +1,0 @@
-{
-    "method": "maniqa",
-    "norm_R_set": [1, 100, 9, 100],
-    "inputFile_set": ["csiq.txt", "live.txt", "tid2013.txt", "koniq-10k.txt"],
-    "outputFile": "fitting_new.txt",
-    "save_num": 500000,
-    "rm_cache": false
-}

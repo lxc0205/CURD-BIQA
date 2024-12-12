@@ -1,7 +1,0 @@
-{
-    "multiscale": false,
-    "method": "maniqa",
-    "pyiqa": false,
-    "ckpt": "./src/maniqa/sota_ckpt_reproduce/ckpt_tid2013.pt",
-    "dataset": "tid2013"
-}

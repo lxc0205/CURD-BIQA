@@ -1,7 +1,0 @@
-{
-    "multiscale": false,
-    "method": "maniqa",
-    "pyiqa": false,
-    "ckpt": "./src/maniqa/sota_ckpt_reproduce/ckpt_csiq.pt",
-    "dataset": "csiq"
-}

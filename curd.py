@@ -299,5 +299,5 @@ def beta_index_to_function(index, beta):
     if function[4] == '+':
         function = function[:4] + function[5:]
     function_latex = function_latex[:-1]
-    return function, function_latex
+    print(f"final function: {function}, \n{function_latex}")
 

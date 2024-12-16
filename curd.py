@@ -248,7 +248,7 @@ def expand(Mssim):
 
     return Mssim_expand
 
-def index2func(index, data_dim = 6):
+def function_to_latex(index, data_dim = 6):
     value_list = ['x0', 'x1', 'x2', 'x3', 'x4', 'x5'] # decide by col
     value_latex_list = ['{\\textbf{x}_0}', '{\\textbf{x}_1}', '{\\textbf{x}_2}', '{\\textbf{x}_3}', '{\\textbf{x}_4}', '{\\textbf{x}_5}'] # decide by col
     row = index // data_dim
@@ -288,7 +288,7 @@ def beta_index_to_function(index, beta):
     function = 'Q = '
     function_latex = '\\boldsymbol{Q}_{score} = '
     for i in range(len(index)):
-        row, col, func, func_latex = index2func(index[i])
+        row, col, func, func_latex = function_to_latex(index[i])
         if beta[i] < 0:  
             function += f"{beta[i]}*{func}"
         elif beta[i] > 0:

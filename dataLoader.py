@@ -56,7 +56,7 @@ class DataLoader(object):
                 ])
             elif transform_mode == 'default':
                 transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((224, 224)), # maniqa-csiq,live,tid2013
+                    # torchvision.transforms.Resize((224, 224)), # maniqa-csiq,live,tid2013
                     # torchvision.transforms.Resize((512, 384)),
                     # torchvision.transforms.RandomCrop(size=patch_size),
                     torchvision.transforms.ToTensor(), # maniqa-csiq,live,tid2013

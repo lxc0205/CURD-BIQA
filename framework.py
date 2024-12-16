@@ -37,8 +37,8 @@ class IQAFramework():
                     torchvision.transforms.ToTensor()])
         self.to_pil = torchvision.transforms.ToPILImage()
         
-    def extract_feature(self, original_image):
-        image = torch.as_tensor(original_image).cuda()
+    def extract_feature(self, image):
+        image = torch.as_tensor(image).cuda()
         feature_maps = [image]
         cnt = 0
         for i, layer in enumerate(self.net.children()):
@@ -96,7 +96,8 @@ def load_maniqa(ckpt_path):
     if './src/' not in sys.path: sys.path.insert(0, './src/')
     if './src/maniqa' not in sys.path: sys.path.insert(0, './src/maniqa')
     from maniqa.models.maniqa import MANIQA
-    iqa_net = MANIQA(embed_dim=768, num_outputs=1, dim_mlp=768, patch_size=8, img_size=224, window_size=4, depths=[2,2], num_heads=[4,4], num_tab=2, scale=0.8)
+    iqa_net = MANIQA(embed_dim=768, num_outputs=1, dim_mlp=768, patch_size=8, img_size=224,
+                    window_size=4, depths=[2,2], num_heads=[4,4], num_tab=2, scale=0.8)
     iqa_net.load_state_dict(torch.load(ckpt_path))
     iqa_net = iqa_net.cuda()
     iqa_net.eval()
@@ -111,7 +112,7 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
     output_file = output_path + output_file
     temp_file = output_path + 'curd_temp.txt'
 
-    # Load Mssim and Mos
+    # load ssim and mos
     Mssim, mos = loadMssimMos(input_files)
     curd = CURD(Mssim, mos.squeeze(1), temp_file)
     if os.path.exists(temp_file):
@@ -119,7 +120,7 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
     else:
         curd_outputs = curd.process(save_num)
         
-    # Perform regression evaluation and save data
+    # perform regression evaluation and save data
     baseline_plcc, baseline_srcc = np.array([0.9680,0.9830,0.9430,0]), np.array([0.9610,0.9820,0.9370,0]) # 0 -> 0.9300
     ssims, moss = [], []
     for id, dataset in enumerate(input_files):
@@ -137,12 +138,12 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
             yhat = prediction(ssim, beta_matrix[i], index)
             plccs[i], srccs[i] = calculate_sp(moss[i].squeeze(), yhat.squeeze())
 
-        rounded_plccs = np.round(plccs, decimals=3)
-        rounded_srccs = np.round(srccs, decimals=3)
-        difference_plccs = [plcc - baseline_plcc[i] for i, plcc in enumerate(rounded_plccs)]
-        difference_srccs = [srcc - baseline_srcc[i] for i, srcc in enumerate(rounded_srccs)]
+        difference_plccs = [plcc - baseline_plcc[i] for i, plcc in enumerate(np.round(plccs, decimals=3))]
+        difference_srccs = [srcc - baseline_srcc[i] for i, srcc in enumerate(np.round(srccs, decimals=3))]
         if all(x >= 0 for x in difference_plccs) and all(x >= 0 for x in difference_srccs):
-            matrix[epoch] = np.concatenate((row[:no+1], beta_matrix[0].squeeze(), beta_matrix[1].squeeze(), beta_matrix[2].squeeze(), beta_matrix[3].squeeze(), plccs, srccs,[(sum(plccs)+sum(srccs))/8]))
+            matrix[epoch] = np.concatenate((row[:no+1], beta_matrix[0].squeeze(), beta_matrix[1].squeeze(), 
+                                            beta_matrix[2].squeeze(), beta_matrix[3].squeeze(), 
+                                            plccs, srccs,[(sum(plccs)+sum(srccs))/8]))
     print('number of regression items: {epoch}\n')
     # sort and save into a file
     matrix = sort(matrix, order="descending", row = 44)[:save_num, :]
@@ -168,7 +169,8 @@ def method_process(mode, dataset, method, ckpt, norm_R, index, beta, output_path
     framework = IQAFramework(iqa_net)
 
     # dataLoader (img + mos)
-    dataLoader = DataLoader(dataset, folder_path[dataset], img_num[dataset], patch_size = 224, patch_num = 1, istrain=False, transform_mode = transform_mode)
+    dataLoader = DataLoader(dataset, folder_path[dataset], img_num[dataset], patch_size = 224, 
+                            patch_num = 1, istrain=False, transform_mode = transform_mode)
     data = dataLoader.get_data()
 
     if mode == 'original': # orignal method
@@ -214,13 +216,12 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     # load json file as configs
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--json', type=str, required=True, help='Path to the JSON configuration file.')
-    # args = parser.parse_args()
-    # with open(args.json, 'r') as file:
-    #     configs = json.load(file)
-
-    with open('./configs/temple.json', 'r') as file:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--json', type=str, required=True, help='Path to the JSON configuration file.')
+    args = parser.parse_args()
+    json_path = args.json
+    # json_path = './configs/temple.json'
+    with open(json_path, 'r') as file:
         configs = json.load(file)
 
     # add input and output paths, create output folder

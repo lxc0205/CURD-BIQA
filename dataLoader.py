@@ -86,15 +86,6 @@ class DataLoader(object):
                 self.data, batch_size=1, shuffle=False)
         return dataloader
 
-def normalize_Mssim(Mssim, range):
-    return np.clip(Mssim, 0, range) / range # range into 0-1
- 
-def normalize_mos(scores, datasets):
-    normalized_scores = np.array(scores) / max_limit[datasets] #range into 0-1
-    if datasets in ['csiq', 'live']:
-        normalized_scores = 1 - normalized_scores # negation
-    return normalized_scores
-   
 def loadMssimMos(file_list, norm_R_set=None):
     for index, path in enumerate(file_list):
         Mssim_temp, mos_temp = (
@@ -110,3 +101,12 @@ def loadMssimMos_single(file_path, norm_R=None):
     data = np.loadtxt(file_path)
     Mssim, mos = data[:,:-1], data[:,-1]
     return ((normalize_Mssim(Mssim, range=norm_R), normalize_mos(mos, file_path.split('/')[-1][:-4])[:, np.newaxis]) if norm_R is not None else (Mssim, normalize_mos(mos, file_path.split('/')[-1][:-4])[:, np.newaxis]))
+
+def normalize_Mssim(Mssim, range):
+    return np.clip(Mssim, 0, range) / range # range into 0-1
+ 
+def normalize_mos(scores, datasets):
+    normalized_scores = np.array(scores) / max_limit[datasets] #range into 0-1
+    if datasets in ['csiq', 'live']:
+        normalized_scores = 1 - normalized_scores # negation
+    return normalized_scores

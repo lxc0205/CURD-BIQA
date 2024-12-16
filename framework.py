@@ -241,7 +241,7 @@ if __name__ == '__main__':
     if configs['mode'] == 'multiscale':
         used_config = ['mode', 'dataset', 'method', 'ckpt', 'norm_R', 'output_path']
     if configs['mode'] == 'curd':
-        used_config = ['mode', 'input_path', 'input_files', 'output_path', 'output_file', 'norm_Rs', 'save_num', 'rm_cache']
+        used_config = ['mode', 'method', 'input_path', 'input_files', 'output_path', 'output_file', 'norm_Rs', 'save_num', 'rm_cache']
     if configs['mode'] == 'enhanced':
         used_config = ['mode', 'dataset', 'method', 'ckpt', 'norm_R', 'index', 'beta']
     now = datetime.now()

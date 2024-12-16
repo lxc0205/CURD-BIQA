@@ -1,9 +1,15 @@
+import os
 import torch
 import folders
 import torchvision
 import numpy as np
 
-folder_path = {
+folder_path ={
+    'csiq': '/mnt/g/datasets/IQA dataset/CSIQ/',
+    'live': '/mnt/g/datasets/IQA dataset/LIVE/',
+    'tid2013': '/mnt/g/datasets/IQA dataset/TID2013/',
+    'koniq-10k': '/mnt/g/datasets/IQA dataset/KONIQ-10k/',
+    } if os.name == 'posix' else {
     'csiq': 'G:/datasets/IQA dataset/CSIQ/',
     'live': 'G:/datasets/IQA dataset/LIVE/',
     'tid2013': 'G:/datasets/IQA dataset/TID2013/',

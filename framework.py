@@ -93,16 +93,18 @@ def load_metrics_pyiqa(method):
         return scaled_iqa_net
 
 def load_maniqa(ckpt_path):
-    if './src/maniqa' not in sys.path:
-        sys.path.insert(0, './src/maniqa')
-        from config import Config
-        from models.maniqa import MANIQA
+    if './src/' not in sys.path: sys.path.insert(0, './src/')
+    if './src/maniqa' not in sys.path: sys.path.insert(0, './src/maniqa')
+    from maniqa.models.maniqa import MANIQA
     iqa_net = MANIQA(embed_dim=768, num_outputs=1, dim_mlp=768, patch_size=8, img_size=224, window_size=4, depths=[2,2], num_heads=[4,4], num_tab=2, scale=0.8)
     iqa_net.load_state_dict(torch.load(ckpt_path))
     iqa_net = iqa_net.cuda()
     iqa_net.eval()
     return iqa_net
 
+# matrix 结构:
+# 0 1 2 3 4 5 6    7    8 - 14    15 - 21    22 - 28    29 - 35    36 37 38 39    40 41 42 43     44
+# ----index----   sw   betas 1    betas 2    betas 3    betas 4       srcc           plcc       sum/8
 def curd_process(input_path, input_files, output_path, output_file, norm_Rs, save_num, rm_cache):
     # file paths
     input_files = [input_path + item for item in input_files]
@@ -124,18 +126,16 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
         ssim, mos = loadMssimMos({dataset}, [norm_Rs[id]])
         ssims.append(expand(ssim))
         moss.append(mos)
-    # matrix 结构:
-    # 0 1 2 3 4 5 6    7    8 - 14    15 - 21    22 - 28    29 - 35    36 37 38 39    40 41 42 43     44
-    # ----index----   sw    beta1      beta2      beta3      beta4         srcc           plcc       sum/8
+        
     no = curd.NO
     matrix = np.zeros((save_num, 2*no + 31))
     for epoch, row in tqdm(enumerate(curd_outputs), total=len(curd_outputs)):
         plccs, srccs, beta_matrix = [0]*4, [0]*4, [[0]*7]*4
-        for i in range(len(ssims)):
+        for i, ssim in enumerate(ssims):
             index = row[:no].astype(int)
-            beta_matrix[i] = regression(ssims[i], moss[i], index)
-            yhat = prediction(ssims[i], beta_matrix[i], index)
-            plccs[i], srccs[i] = calculate_sp(ssims[i].squeeze(), yhat.squeeze())
+            beta_matrix[i] = regression(ssim, moss[i], index)
+            yhat = prediction(ssim, beta_matrix[i], index)
+            plccs[i], srccs[i] = calculate_sp(moss[i].squeeze(), yhat.squeeze())
 
         rounded_plccs = np.round(plccs, decimals=3)
         rounded_srccs = np.round(srccs, decimals=3)
@@ -154,7 +154,7 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
             os.remove(temp_file)
     print(f'The curd iqa finished!')
 
-def method_process(mode, dataset, method, ckpt, norm_R, index, beta):
+def method_process(mode, dataset, method, ckpt, norm_R, index, beta, output_path):
     # create the enhancing framework
     if ckpt is None:
         iqa_net = load_metrics_pyiqa(method)
@@ -189,7 +189,7 @@ def method_process(mode, dataset, method, ckpt, norm_R, index, beta):
         matrix = np.array(matrix)
 
     if mode == 'multiscale': # mutiscale framework
-        np.savetxt(configs['output_path'] + dataset + '.txt', matrix, fmt='%f', delimiter='\t')
+        np.savetxt(output_path + dataset + '.txt', matrix, fmt='%f', delimiter='\t')
     
     if mode == 'enhanced': # enhanced method
         # beta_index_to_function(index, beta)
@@ -214,16 +214,14 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     # load json file as configs
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--json', type=str, required=True, help='Path to the JSON configuration file.')
-    args = parser.parse_args()
-    with open(args.json, 'r') as file:
-        configs = json.load(file)
-
-    # jsons = f'.\configs\\temple.json'
-    # with open(jsons, 'r') as file:
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--json', type=str, required=True, help='Path to the JSON configuration file.')
+    # args = parser.parse_args()
+    # with open(args.json, 'r') as file:
     #     configs = json.load(file)
 
+    with open('./configs/temple.json', 'r') as file:
+        configs = json.load(file)
 
     # add input and output paths, create output folder
     if configs['mode'] == 'multiscale':
@@ -237,15 +235,24 @@ if __name__ == '__main__':
             os.makedirs(configs['output_path'])
 
     # show configs
+    if configs['mode'] == 'original':
+        used_config = ['mode', 'dataset', 'method', 'ckpt', 'norm_R']
+    if configs['mode'] == 'multiscale':
+        used_config = ['mode', 'dataset', 'method', 'ckpt', 'norm_R', 'output_path']
+    if configs['mode'] == 'curd':
+        used_config = ['mode', 'input_path', 'input_files', 'output_path', 'output_file', 'norm_Rs', 'save_num', 'rm_cache']
+    if configs['mode'] == 'enhanced':
+        used_config = ['mode', 'dataset', 'method', 'ckpt', 'norm_R', 'index', 'beta']
     now = datetime.now()
     print(now.strftime("%Y-%m-%d %H:%M:%S"))
     print("configs:")
     for key, value in sorted(configs.items()):
-        print(f"{key.replace('_', ' ').title()}: {value}")
+        if key in used_config:
+            print(f"{key.replace('_', ' ').title()}: {value}")
 
     # main process
     if configs['mode'] == 'original' or configs['mode'] == 'multiscale' or configs['mode'] == 'enhanced':
-        method_process( configs['mode'], configs['dataset'], configs['method'], configs['ckpt'], configs['norm_R'], configs['index'], configs['beta'])
+        method_process( configs['mode'], configs['dataset'], configs['method'], configs['ckpt'], configs['norm_R'], configs['index'], configs['beta'], configs['output_path'])
     elif configs['mode'] == 'curd':
         curd_process(configs['input_path'], configs['input_files'], configs['output_path'], configs['output_file'], 
                       configs['norm_Rs'], configs['save_num'], configs['rm_cache'])

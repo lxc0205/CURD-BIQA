@@ -121,7 +121,7 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
         curd_outputs = curd.process(save_num)
         
     # perform regression evaluation and save data
-    baseline_plcc, baseline_srcc = np.array([0.9680,0.9830,0.9430,0]), np.array([0.9610,0.9820,0.9370,0]) # 0 -> 0.9300
+    baseline_plcc, baseline_srcc = np.array([0.968,0.983,0.943,0]), np.array([0.961,0.982,0.937,0]) # 0， 0 -> 0.946 0.9300
     ssims, moss = [], []
     for id, dataset in enumerate(input_files):
         ssim, mos = loadMssimMos({dataset}, [norm_Rs[id]])
@@ -138,13 +138,14 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
             yhat = prediction(ssim, beta_matrix[i], index)
             plccs[i], srccs[i] = calculate_sp(moss[i].squeeze(), yhat.squeeze())
 
-        difference_plccs = [plcc - baseline_plcc[i] for i, plcc in enumerate(np.round(plccs, decimals=3))]
-        difference_srccs = [srcc - baseline_srcc[i] for i, srcc in enumerate(np.round(srccs, decimals=3))]
-        if all(x >= 0 for x in difference_plccs) and all(x >= 0 for x in difference_srccs):
-            matrix[epoch] = np.concatenate((row[:no+1], beta_matrix[0].squeeze(), beta_matrix[1].squeeze(), 
-                                            beta_matrix[2].squeeze(), beta_matrix[3].squeeze(), 
-                                            plccs, srccs,[(sum(plccs)+sum(srccs))/8]))
-    print('number of regression items: {epoch}\n')
+        # difference_plccs = [plcc - baseline_plcc[i] for i, plcc in enumerate(np.round(plccs, decimals=3))]
+        # difference_srccs = [srcc - baseline_srcc[i] for i, srcc in enumerate(np.round(srccs, decimals=3))]
+        # if all(x >= 0 for x in difference_plccs) and all(x >= 0 for x in difference_srccs):
+        # 0.937
+        matrix[epoch] = np.concatenate((row[:no+1], beta_matrix[0].squeeze(), beta_matrix[1].squeeze(), 
+                                        beta_matrix[2].squeeze(), beta_matrix[3].squeeze(), 
+                                        plccs, srccs,[(sum(plccs)+sum(srccs))/8]))
+    print(f'number of regression items: {epoch}\n')
     # sort and save into a file
     matrix = sort(matrix, order="descending", row = 44)[:save_num, :]
     np.savetxt(output_file, matrix, fmt=['%d']*no + ['%f']*(matrix.shape[1]-no), delimiter=' ')

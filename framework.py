@@ -121,7 +121,7 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
         curd_outputs = curd.process(save_num)
         
     # perform regression evaluation and save data
-    baseline_plcc, baseline_srcc = np.array([0.968,0.983,0.943,0]), np.array([0.961,0.982,0.937,0]) # 0， 0 -> 0.946 0.9300
+    baseline_plcc, baseline_srcc = np.array([0.968,0.983,0.943,0]), np.array([0.961,0.982,0.937,0]) # 0, 0 -> 0.946, 0.9300
     ssims, moss = [], []
     for id, dataset in enumerate(input_files):
         ssim, mos = loadMssimMos({dataset}, [norm_Rs[id]])

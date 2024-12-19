@@ -92,21 +92,20 @@ class DataLoader(object):
                 self.data, batch_size=1, shuffle=False)
         return dataloader
 
-def loadMssimMos(file_list, norm_R_set=None):
-    for index, path in enumerate(file_list):
-        Mssim_temp, mos_temp = (
-            (loadMssimMos_single(path, norm_R_set[index])) if norm_R_set is not None else (loadMssimMos_single(path))
-        )
-        
-        Mssim, mos = (
-            (Mssim_temp, mos_temp) if index == 0 else (np.concatenate((Mssim, Mssim_temp), axis=0), np.concatenate((mos, mos_temp), axis=0))
-        )
-    return Mssim, mos
-
-def loadMssimMos_single(file_path, norm_R=None):
+def load_ssim_mos(file_path):
     data = np.loadtxt(file_path)
-    Mssim, mos = data[:,:-1], data[:,-1]
-    return ((normalize_Mssim(Mssim, range=norm_R), normalize_mos(mos, file_path.split('/')[-1][:-4])[:, np.newaxis]) if norm_R is not None else (Mssim, normalize_mos(mos, file_path.split('/')[-1][:-4])[:, np.newaxis]))
+    ssim, mos = data[:,:-1], data[:,-1]
+
+    dataset = file_path.split('/')[-1][:-4]
+    mos = normalize_mos(mos, dataset)
+    mos = mos[:, np.newaxis]
+
+    return ssim, mos
+
+def norm_ssim(ssim, norm_range=None):
+    if norm_range is not None:
+        ssim = normalize_Mssim(ssim, range=norm_range)
+    return ssim
 
 def normalize_Mssim(Mssim, range):
     return np.clip(Mssim, 0, range) / range # range into 0-1

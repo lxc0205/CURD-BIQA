@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from curd import CURD, calculate_sp, regression, prediction, expand, sort, beta_index_to_function
-from dataLoader import DataLoader, loadMssimMos, normalize_Mssim, normalize_mos, folder_path, img_num
+from dataLoader import DataLoader, load_ssim_mos, norm_ssim, normalize_Mssim, normalize_mos, folder_path, img_num
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -20,7 +20,7 @@ class IQAFramework():
         super(IQAFramework, self).__init__()
         # load iqa_network
         self.function = iqa_net
-        # Load VGG16 model
+        # load VGG16 model
         self.net = torchvision.models.vgg16(weights = torchvision.models.VGG16_Weights.IMAGENET1K_V1).cuda().features.eval()
         # Feature Layers ID
         # self.convlayer_id = [0, 2, 5, 7, 10] # original layers
@@ -28,9 +28,9 @@ class IQAFramework():
         # self.convlayer_id = [1, 5, 9, 13, 18, 23, 27]
         # self.convlayer_id = [1, 9, 18, 27]
         self.convlayer_id = [1, 5, 9, 18, 27]
-        # Sample Rate
+        # sample rate 
         self.sr = np.array([64, 128, 256, 512, 512])
-        # Transform for feature maps
+        # transform for deep feature maps
         self.transform = torchvision.transforms.Compose([
                     torchvision.transforms.Resize((512, 384)),
                     torchvision.transforms.RandomCrop(size=224),
@@ -113,20 +113,22 @@ def curd_process(input_path, input_files, output_path, output_file, norm_Rs, sav
     temp_file = output_path + 'curd_temp.txt'
 
     # load ssim and mos
-    Mssim, mos = loadMssimMos(input_files)
-    curd = CURD(Mssim, mos.squeeze(1), temp_file)
-    if os.path.exists(temp_file):
-        curd_outputs = np.loadtxt(temp_file)
-    else:
-        curd_outputs = curd.process(save_num)
+    ssims, moss = [], []
+    ssims_for_curd = []
+    for id, dataset in enumerate(input_files):
+        ssim, mos = load_ssim_mos(dataset)
+        ssims_for_curd.append(ssim)
+        ssim = norm_ssim(ssim, norm_Rs[id])
+        ssims.append(expand(ssim))
+        moss.append(mos)
+    
+    mssim_concat, mos_concat = np.concatenate(ssims_for_curd, axis=0), np.concatenate(moss, axis=0)
+
+    curd = CURD(mssim_concat, mos_concat.squeeze(1), temp_file)
+    curd_outputs = np.loadtxt(temp_file) if os.path.exists(temp_file) else curd.process(save_num)
         
     # perform regression evaluation and save data
     baseline_plcc, baseline_srcc = np.array([0.968,0.983,0.943,0]), np.array([0.961,0.982,0.937,0]) # 0, 0 -> 0.946, 0.9300
-    ssims, moss = [], []
-    for id, dataset in enumerate(input_files):
-        ssim, mos = loadMssimMos({dataset}, [norm_Rs[id]])
-        ssims.append(expand(ssim))
-        moss.append(mos)
         
     no = curd.NO
     matrix = np.zeros((save_num, 2*no + 31))
@@ -187,7 +189,6 @@ def method_process(mode, dataset, method, ckpt, norm_R, index, beta, output_path
         matrix = []
         for img, label in tqdm(data):
             layer_scores = framework.multiscale_framework(img)
-            # matrix.append(np.hstack((layer_scores, np.array([float(label.numpy())]))))
             matrix.append(np.hstack((layer_scores, label.numpy().astype(float))))
         matrix = np.array(matrix)
 

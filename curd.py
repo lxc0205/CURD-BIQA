@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from math import comb
 from tqdm import tqdm
@@ -8,15 +9,15 @@ from scipy.stats import spearmanr, pearsonr
 
 
 class CURD:
-    def __init__(self, Mssim, mos, output_flie_name='./outputs/curd_temp.txt'):
+    def __init__(self, Mssim, mos, no = 7, output_file_name='./curd_temp.txt'):
         # 数据
         self.Mssim, self.mos = Mssim, mos
         # 输入输出文件名
-        self.output_flie_name = output_flie_name
+        self.output_file_name = output_file_name
         # 遍历范围
         self.R_min, self.R_max = 0, 8*self.Mssim.shape[1]-7
         # 其他常数
-        self.NO = 7
+        self.NO = no
         self.THRES = 0.9999
 
     def pearson_corr(self):
@@ -32,7 +33,7 @@ class CURD:
         for i in range(self.NO+1):
             Rhere[i][i] = 1
 
-        with open(self.output_flie_name, 'w') as file:
+        with open(self.output_file_name, 'w') as file:
             for i1 in tqdm(range(self.R_min, self.R_max+1)):
                 Rhere[0][self.NO] = self.correlation_matrix[i1][n]
                 for i2 in range(i1+1, n):
@@ -151,7 +152,7 @@ class CURD:
         
         #从文件里读入
         mat = []
-        with open(self.output_flie_name, 'r') as file:
+        with open(self.output_file_name, 'r') as file:
             for line in file:
                 if line.strip():
                     temp = [float(x) for x in line.split()]
@@ -162,7 +163,7 @@ class CURD:
         sorted_matrix = sort(mat, order="ascending", row = 7)
         sorted_matrix = sorted_matrix[:save_num, :]
 
-        with open(self.output_flie_name, 'w') as file:
+        with open(self.output_file_name, 'w') as file:
             for i in range(sorted_matrix.shape[0]):
                 mat = sorted_matrix[i,:]
                 for j in range(len(mat)):
@@ -196,6 +197,9 @@ class CURD:
         sorted_matrix = sorted_matrix[:save_num, :]
 
         return sorted_matrix
+    
+    def get_output_file_name(self):
+        return self.output_file_name
 
 def sort(data, order, row):
     sorted_indices = np.argsort(data[:, row], axis=0, kind='mergesort')
@@ -205,16 +209,15 @@ def sort(data, order, row):
     sorted_matrix = np.take_along_axis(data, sorted_indices, axis=0)
     return sorted_matrix
 
-def regression(Mssim, mos, index):
-    Mssim_s = Mssim[:, index]
-    U, S, Vt = np.linalg.svd(Mssim_s, full_matrices=False)
-    inv_Mssim_s = Vt.T @ np.diag(1 / S) @ U.T
-    beta = inv_Mssim_s @ mos
-    return beta
+def regression(X, y, index):
+    U, S, V = torch.linalg.svd(X[:, index], full_matrices=False)
+    inv_X_s = V.transpose(-2, -1) @ torch.diag(1 / S) @ U.transpose(-2, -1)
+    beta = inv_X_s @ y
+    return beta.squeeze()
 
-def prediction(Mssim, beta, index):
-    Mssim_s = Mssim[:, index]
-    yhat = Mssim_s @ beta
+def prediction(X, beta, index):
+    X_s = X[:, index]
+    yhat = X_s @ beta
     return yhat
 
 def plot_y_yhat(pred, label):
@@ -228,23 +231,32 @@ def plot_y_yhat(pred, label):
     print(f'mse: {np.mean((pred - label) ** 2)}')
     plt.show()
 
-def calculate_sp(y, yhat):
+def calculate_sp(y, yhat, show = True):
     plcc, p_PLCC = pearsonr(y, yhat)
     srcc, p_SRCC = spearmanr(y, yhat)
+
+    err_flag = False
     if p_PLCC >0.05:
-        print("The plcc correlation is not significant.")
+        if show:
+            print("The plcc correlation is not significant.")
+        err_flag = True
     if p_SRCC >0.05:
-        print("The srcc correlation is not significant.")
-    return np.abs(plcc), np.abs(srcc)
+        if show:
+            print("The srcc correlation is not significant.")
+        err_flag = True
+    plcc, srcc = torch.abs(torch.tensor(plcc)).item(), torch.abs(torch.tensor(srcc)).item()
+    if show:
+        print(f'Testing plcc {plcc},\tsrcc {srcc}.')
+    return plcc, srcc, err_flag
 
 def expand(Mssim):
-    Mssim_expand = np.hstack((
-        Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim+1) / np.log(2),    np.power(2, Mssim) - 1, (np.exp(Mssim)-1) / (np.exp(1)-1)
-    #     Mssim,  Mssim**2,   np.sqrt(Mssim), Mssim**3,   Mssim**(1/3),   np.log(Mssim),                  np.power(2, Mssim),     np.exp(Mssim)
-    ))
+    if torch.isnan(Mssim).any(): print("origin function warning: Tensor contains NaN.")
+    if torch.isinf(Mssim).any(): print("origin function warning: Tensor contains Inf.")
 
-    if np.isnan(Mssim_expand).any(): print("expand function warning: Array contains NaN.")
-    if np.isinf(Mssim_expand).any(): print("expand function warning: Array contains Inf.")
+    Mssim_expand = torch.cat((
+        Mssim, Mssim**2, torch.sqrt(Mssim), Mssim**3, Mssim**(1/3), torch.log(Mssim+1)/torch.log(torch.tensor(2.0)), torch.pow(2, Mssim)-1, (torch.exp(Mssim)-1) /(torch.exp(torch.tensor(1.0))-1)), dim=1)
+    if torch.isnan(Mssim_expand).any(): print("expand function warning: Tensor contains NaN.")
+    if torch.isinf(Mssim_expand).any(): print("expand function warning: Tensor contains Inf.")
 
     return Mssim_expand
 

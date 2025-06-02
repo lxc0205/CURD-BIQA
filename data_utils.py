@@ -1,30 +1,32 @@
 import os
 import torch
+import numpy as np
+from curd import sort
 
-def save_parameter(index, beta, file_path='model_params.pt'):
-    # 定义参数
-    # beta = torch.tensor([1, 3, 5])
-    # index = torch.tensor([2, 5, 6])
+def save_parameter(index, beta, file_path='model_params.pt', show = True):
     params = {'index': index, 'beta': beta}
     torch.save(params, file_path)
-    print(f"Parameters saved to {file_path}")
+    if show:
+        print(f"Parameters saved to {file_path}")
 
 def load_parameter(file_path='model_params.pt'):
-    # 加载参数
-    loaded_params = torch.load(file_path)
-    index = loaded_params["index"]
-    beta = loaded_params["beta"]    
+    params = torch.load(file_path)
+    index = params["index"]
+    beta = params["beta"]    
     return index, beta
 
-def save_matrix(matrix, file_path='matrix.pt'):
-    # matrix = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+def save_matrix(matrix, file_path='matrix.pt', show = True):
     torch.save(matrix, file_path)
-    print(f"Matrix saved to {file_path}")
+    if show:
+        print(f"Matrix saved to {file_path}")
 
 def load_matrix(file_path='matrix.pt'):
-    # 加载矩阵
-    loaded_matrix = torch.load(file_path)
-    return loaded_matrix
+    matrix = torch.load(file_path)
+    return matrix
+
+def save_logs(logs_matrix, file_name, save_num, sort_num = 9):
+    logs = sort(np.array(logs_matrix, dtype=float), order="descending", row=sort_num)[:save_num, :]
+    np.savetxt(file_name, logs, fmt=['%f']*10 + ['%d']*1, delimiter=' ')
 
 def create_directory(path):
     if not os.path.exists(path): 

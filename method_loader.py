@@ -6,15 +6,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_methods(method, ckpt = None):
     if ckpt is None:
-        iqa_net = load_methods_pyiqa(method)
+        iqa_method = load_methods_pyiqa(method)
         transform_mode = 'pyiqa'
-        return iqa_net, transform_mode
+        return iqa_method, transform_mode
     elif method == 'maniqa':
-        iqa_net = load_maniqa(ckpt)
+        iqa_method = load_maniqa(ckpt)
         transform_mode = 'maniqa'
-        return iqa_net, transform_mode
+        return iqa_method, transform_mode
     else:
         print('The method is not supported.')
+        print_pyiqa_list()
         return
 
 def print_pyiqa_list():

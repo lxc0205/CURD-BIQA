@@ -1,7 +1,9 @@
 *.sh
 *.mat
 *.pkl
-*.zip
+*.pt
+*.txt
+*.ipynb
 .gitignore
 __pycache__/
 checkpoints/

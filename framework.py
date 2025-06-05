@@ -6,17 +6,17 @@ from tqdm import tqdm
 from timm.models.vision_transformer import vit_base_patch16_224_in21k as VisionTransformer
 
 class feature_framework():
-    def __init__(self, iqa_net, backbone='vgg16'):
+    def __init__(self, iqa_net, backbone=None):
         super(feature_framework, self).__init__()
         # load iqa_network
         self.function = iqa_net
         # load backbone model
         self.backbone_name = backbone
-        if backbone == 'vit':
+        if self.backbone_name == 'vit':
             self.net = VisionTransformer(num_classes=10).cuda().eval()
-        elif backbone == 'vgg16':
+        elif self.backbone_name == 'vgg16':
             self.net = torchvision.models.vgg16(weights = torchvision.models.VGG16_Weights.IMAGENET1K_V1).cuda().features.eval()
-        elif backbone == None:
+        elif self.backbone_name is None:
             self.net = None
             print("No multiscale backbone model is used, you can use the original iqa network directly.")
         else:

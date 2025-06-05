@@ -4,11 +4,13 @@
 *.pt
 *.txt
 *.ipynb
+*.pdf
+*.md
 .gitignore
 __pycache__/
 checkpoints/
 configs/
-data/
+loaders/
 docs/
 models/
 outputs/

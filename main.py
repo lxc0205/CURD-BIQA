@@ -7,10 +7,10 @@ from tqdm import tqdm
 from datetime import datetime
 from omegaconf import OmegaConf
 from framework import feature_framework
-from method_loader import load_methods
-from data_utils import save_parameter, load_parameter, save_matrix, load_matrix, save_logs, create_directory
+from loaders.method_loader import load_methods
+from loaders.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
 from curd import CURD, calculate_sp, regression, prediction, expand, beta_index_to_function
-from data.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
+from data_utils import save_parameter, load_parameter, save_matrix, load_matrix, save_logs, create_directory
 
 
 def origin_process(configs):
@@ -22,7 +22,7 @@ def origin_process(configs):
     data = dataloader.get_data()
     
     # create framework
-    frame = feature_framework(iqa_method, backbone = None)  
+    frame = feature_framework(iqa_method)  
 
     # evaluate the model
     X, y = frame.origin_loader(data)
@@ -68,7 +68,7 @@ def curd_process(configs):
     y_for_curd = torch.cat(y_list, dim=0)
 
     curd_no = configs['curd']['curd_no']
-    curd = CURD(X_for_curd, y_for_curd.squeeze(1), no=curd_no)
+    curd = CURD(X_for_curd, y_for_curd.squeeze(1), no=curd_no, output_file_name=configs['curd']['curd_output_path']+'curd_temp.txt')
 
     # remove curd temp file
     if configs['curd']['rm_temp'] and os.path.exists(curd.get_output_file_name()):
@@ -101,7 +101,7 @@ def curd_process(configs):
         if not err_flag:
             logs[epoch] = torch.cat((row[curd_no].unsqueeze(0), plccs, srccs, torch.tensor([(plccs.sum() + srccs.sum()) / 8]), torch.tensor([epoch])))
         create_directory(configs['curd']['ckpt_model_path'])
-        parameter_path = configs['curd']['ckpt_model_path'] + configs['curd']['curd_output_file'][:-3] + str(epoch) + '.pt'
+        parameter_path = configs['curd']['ckpt_model_path'] + configs['curd']['curd_output_file'][:-3] + '_' + str(epoch) + '.pt'
         parameter_paths.append(parameter_path)
         save_parameter(index, beta = beta_matrix, file_path = parameter_path, show = False)
 

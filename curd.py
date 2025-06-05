@@ -9,7 +9,7 @@ from scipy.stats import spearmanr, pearsonr
 
 
 class CURD:
-    def __init__(self, Mssim, mos, no = 7, output_file_name='./curd_temp.txt'):
+    def __init__(self, Mssim, mos, no = 7, output_file_name='./outputs/curd_temp.txt'):
         # 数据
         self.Mssim, self.mos = Mssim, mos
         # 输入输出文件名

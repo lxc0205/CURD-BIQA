@@ -7,8 +7,8 @@ from tqdm import tqdm
 from datetime import datetime
 from omegaconf import OmegaConf
 from framework import feature_framework
-from loaders.method_loader import load_methods
-from loaders.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
+from method_loader import load_methods
+from data.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
 from curd import CURD, calculate_sp, regression, prediction, expand, beta_index_to_function
 from data_utils import save_parameter, load_parameter, save_matrix, load_matrix, save_logs, create_directory
 

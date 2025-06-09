@@ -5,15 +5,16 @@
 *.txt
 *.ipynb
 *.pdf
-*.md
 .gitignore
 __pycache__/
 checkpoints/
 configs/
-loaders/
+data/
 docs/
 models/
 outputs/
 utils/
 yaml/
+vit_vgg_comp.py
+Readme.md
 

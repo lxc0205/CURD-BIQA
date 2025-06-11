@@ -1,0 +1,84 @@
+# method
+method: "maniqa"
+pyiqa: false
+exam_id: "01"
+
+# mode
+# mode: "origin"
+mode: "curd"
+# mode: "enhanced"
+
+# backbone
+# backbone: "vgg16"
+backbone: "vit"
+
+# exam paths
+multiscale_dir: './outputs/${method}_${exam_id}/multiscale outputs/'
+curd_dir: './outputs/${method}_${exam_id}/curd outputs/'
+ckpt_dir: './outputs/${method}_${exam_id}/checkpoints/'
+enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
+
+
+# origin mode parameters
+origin:
+  # dataset
+  dataset: "live"
+
+  # ckpt
+  ckpt: "./models/${method}/sota_ckpt_reproduce/ckpt_csiq.pt"
+  # ckpt: None
+
+
+# curd mode parameters
+curd:
+  # use multiscale framework
+  multiscale_flag: false
+
+  # datasets for training
+  datasets: ["csiq", "live", "tid2013", "koniq-10k"]
+  
+  # ckpts for datasets, if None, ckpts = None
+  ckpts: ["./models/${method}/sota_ckpt_reproduce/ckpt_csiq.pt",
+          "./models/${method}/sota_ckpt_reproduce/ckpt_live.pt",
+          "./models/${method}/sota_ckpt_reproduce/ckpt_tid2013.pt",
+          "./models/${method}/sota_ckpt_reproduce/ckpt_koniq-10k.pt"]
+  # ckpts = None
+  
+  # normalization ranges
+  norm_Rs: [1, 100, 9, 100]
+  
+  # curd number
+  curd_no: 7
+  
+  # save number
+  save_num: 50000
+  
+  # remove temporary file flag
+  rm_temp: false
+
+  # curd output file
+  curd_file: 'curd_${curd.datasets}.pt'
+  log_file: 'curd_${curd.datasets}.txt'
+
+# enhanced mode parameters
+enhanced:
+  # use multiscale framework
+  multiscale_flag: true
+
+  # dataset
+  dataset: "csiq"
+
+  # ckpt
+  ckpt: "./models/maniqa/sota_ckpt_reproduce/ckpt_csiq.pt"
+  # ckpt: None
+
+  # normalization range
+  norm_R: 1
+
+  # curd model file
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_38511.pt"
+
+  # enhanced output file
+  enhanced_file: 'enhanced_results_${enhanced.dataset}.txt'
+
+  

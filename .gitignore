@@ -9,12 +9,9 @@
 __pycache__/
 checkpoints/
 configs/
-data/
 docs/
 models/
 outputs/
-utils/
-yaml/
 vit_vgg_comp.py
 Readme.md
 

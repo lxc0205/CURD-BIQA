@@ -32,7 +32,7 @@ def origin_process(configs):
 
 def curd_process(configs):
     # load multiscale score
-    X_list, X_for_curd, y_list = [], [], []
+    X_list, y_list = [], []
 
     for dataset_id, dataset in enumerate(configs['curd']['datasets']):
         if configs['curd']['multiscale_flag']:
@@ -59,17 +59,13 @@ def curd_process(configs):
             matrix = load_matrix(configs['multiscale_dir'] + dataset + '.pt')
             X, y = matrix[:,:-1], matrix[:,-1]
 
-        y = normalize_y(y, configs['curd']['datasets'][dataset_id]).unsqueeze(1)
+        y = normalize_y(y, configs['curd']['datasets'][dataset_id])
         X = normalize_X(X, configs['curd']['norm_Rs'][dataset_id])
-        X_for_curd.append(X)
+
         X_list.append(expand(X))
-        y_list.append(y)
+        y_list.append(y.unsqueeze(1))
 
-    X_for_curd = torch.cat(X_for_curd, dim=0)
-    y_for_curd = torch.cat(y_list, dim=0)
-
-    curd_no = configs['curd']['curd_no']
-    curd = CURD(X_for_curd, y_for_curd.squeeze(1), no=curd_no, output_file_name=configs['curd_dir']+'curd_temp.txt')
+    curd = CURD(torch.cat(X_list, dim=0), torch.cat(y_list, dim=0).squeeze(1), no=configs['curd']['curd_no'], output_file_name=configs['curd_dir']+'curd_temp.txt')
 
     # remove curd temp file
     if configs['curd']['rm_temp'] and os.path.exists(curd.get_output_file_name()):
@@ -90,7 +86,7 @@ def curd_process(configs):
     for epoch, row in tqdm(enumerate(curd_outputs), total=len(curd_outputs)):
         plccs, srccs, beta_matrix = torch.zeros(n), torch.zeros(n), torch.zeros((n, 7))
         for i, X in enumerate(X_list):
-            index = row[:curd_no].to(torch.int)
+            index = row[:configs['curd']['curd_no']].to(torch.int)
             beta_matrix[i] = regression(X, y_list[i], index)
             y_hat = prediction(X, beta_matrix[i], index)
             plccs[i], srccs[i], err_flag = calculate_sp(y_list[i].squeeze(), y_hat.squeeze(), show=False)
@@ -99,7 +95,7 @@ def curd_process(configs):
 
         # log and save parameter
         if not err_flag:
-            logs[epoch] = torch.cat((row[curd_no].unsqueeze(0), plccs, srccs, torch.tensor([(plccs.sum() + srccs.sum()) / 8]), torch.tensor([epoch])))
+            logs[epoch] = torch.cat((row[configs['curd']['curd_no']].unsqueeze(0), plccs, srccs, torch.tensor([(plccs.sum() + srccs.sum()) / 8]), torch.tensor([epoch])))
         
         parameter_path = configs['ckpt_dir'] + configs['curd']['curd_file'][:-3] + '_' + str(epoch) + '.pt'
         parameter_paths.append(parameter_path)

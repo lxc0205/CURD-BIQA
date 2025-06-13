@@ -11,11 +11,11 @@ from scipy.stats import spearmanr, pearsonr
 class CURD:
     def __init__(self, Mssim, mos, no = 7, output_file_name='./outputs/curd_temp.txt'):
         # 数据
-        self.Mssim, self.mos = Mssim, mos
+        self.Mssim_expand, self.mos = Mssim, mos
         # 输入输出文件名
         self.output_file_name = output_file_name
         # 遍历范围
-        self.R_min, self.R_max = 0, 8*self.Mssim.shape[1]-7
+        self.R_min, self.R_max = 0, self.Mssim_expand.shape[1]-7
         # 其他常数
         self.NO = no
         self.THRES = 0.9999
@@ -24,7 +24,6 @@ class CURD:
          self.correlation_matrix = np.corrcoef(np.concatenate((self.Mssim_expand, self.mos[:, np.newaxis]), axis=1).T)
 
     def process(self, save_num):
-        self.Mssim_expand = expand(self.Mssim)
         self.pearson_corr()
         Rhere = np.zeros((self.NO+1, self.NO+1))
         Rxy = np.zeros((self.NO+1, self.NO+1))
@@ -173,7 +172,6 @@ class CURD:
         return sorted_matrix
 
     def process_det(self, save_num):
-        self.Mssim_expand = expand(self.Mssim)
         self.pearson_corr()
         variable_num = self.correlation_matrix.shape[0] - 1
         comb_num = comb(variable_num, self.NO)

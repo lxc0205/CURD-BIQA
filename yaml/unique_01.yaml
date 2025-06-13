@@ -1,12 +1,12 @@
 # method
-method: "maniqa"
-pyiqa: false
+method: "unique"
+pyiqa: true
 exam_id: "01"
 
 # mode
-# mode: "origin"
+mode: "origin"
 # mode: "curd"
-mode: "enhanced"
+# mode: "enhanced"
 
 # backbone
 # backbone: "vgg16"
@@ -25,8 +25,7 @@ origin:
   dataset: "csiq"
 
   # ckpt
-  ckpt: "./models/${method}/sota_ckpt_reproduce/ckpt_csiq.pt"
-  # ckpt: None
+  ckpt: None
 
 
 # curd mode parameters
@@ -37,12 +36,8 @@ curd:
   # datasets for training
   datasets: ["csiq", "live", "tid2013", "koniq-10k"]
   
-  # ckpts for datasets, if None, ckpts = None
-  ckpts: ["./models/${method}/sota_ckpt_reproduce/ckpt_csiq.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_live.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_tid2013.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_koniq-10k.pt"]
-  # ckpts: None
+  # ckpts for datasets
+  ckpts: None
   
   # normalization ranges
   norm_Rs: [1, 100, 9, 100]
@@ -69,8 +64,7 @@ enhanced:
   dataset: "csiq"
 
   # ckpt
-  ckpt: "./models/maniqa/sota_ckpt_reproduce/ckpt_csiq.pt"
-  # ckpt: None
+  ckpt: None
 
   # normalization range
   norm_R: 1

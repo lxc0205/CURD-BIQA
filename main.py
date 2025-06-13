@@ -133,9 +133,9 @@ def enhanced_process(configs):
 
     # prediction
     X = (expand(normalize_X(X, configs['enhanced']['norm_R'])) if configs['enhanced']['norm_R'] is not None else expand(X))
-    y = normalize_y(y, configs['enhanced']['dataset']).unsqueeze(1)
+    y = normalize_y(y, configs['enhanced']['dataset'])
     y_hat = prediction(X, beta, index)
-    calculate_sp(y.squeeze(), y_hat.squeeze())
+    calculate_sp(y, y_hat.squeeze())
 
     # save matrix
     np.savetxt(configs['enhanced_dir'] + configs['enhanced']['enhanced_file'], np.column_stack((y.squeeze(), y_hat.squeeze())), fmt='%f', delimiter='\t')

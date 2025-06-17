@@ -6,8 +6,8 @@ import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from omegaconf import OmegaConf
-from framework import feature_framework
 from method_loader import MethodLoader
+from framework import feature_framework
 from data.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
 from curd import CURD, calculate_sp, regression, prediction, expand, beta_index_to_function
 from utils import save_parameter, load_parameter, save_matrix, load_matrix, save_logs, create_directory
@@ -15,13 +15,11 @@ from utils import save_parameter, load_parameter, save_matrix, load_matrix, save
 
 def origin_process(configs):
     # load iqa method
-    methodloader = MethodLoader(configs['method'], configs['pyiqa'], configs['origin']['ckpt'])
-    iqa_method, transform_mode = methodloader()
+    iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['origin']['ckpt'])()
 
     # load dataset: img + y
-    dataloader = DataLoader(configs['origin']['dataset'], folder_path[configs['origin']['dataset']], img_num[configs['origin']['dataset']], transform_mode = transform_mode)
-    data = dataloader.get_data()
-    
+    data = DataLoader(configs['origin']['dataset'], folder_path[configs['origin']['dataset']], img_num[configs['origin']['dataset']])()
+
     # create framework
     frame = feature_framework(iqa_method)  
 
@@ -37,18 +35,19 @@ def curd_process(configs):
     for dataset_id, dataset in enumerate(configs['curd']['datasets']):
         if configs['curd']['multiscale_flag']:
             # load iqa method
-            methodloader = MethodLoader(configs['method'], configs['pyiqa'], configs['curd']['ckpts'][dataset_id])
-            iqa_method, transform_mode = methodloader()
+            iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['curd']['ckpts'][dataset_id])()
 
             # load dataset: img + y
-            dataloader = DataLoader(dataset, folder_path[dataset], img_num[dataset], transform_mode=transform_mode)
-            data = dataloader.get_data()
+            data = DataLoader(dataset, folder_path[dataset], img_num[dataset])()
 
             # create framework
             frame = feature_framework(iqa_method, backbone=configs['backbone'])
 
             # extract multiscale features
             X, y = frame.multiscale_loader(data)
+
+            y = normalize_y(y, configs['curd']['datasets'][dataset_id])
+            X = normalize_X(X)
  
             # save matrix
             matrix = torch.cat((X, y), dim=1)
@@ -59,13 +58,10 @@ def curd_process(configs):
             matrix = load_matrix(configs['multiscale_dir'] + dataset + '.pt')
             X, y = matrix[:,:-1], matrix[:,-1]
 
-        y = normalize_y(y, configs['curd']['datasets'][dataset_id])
-        X = normalize_X(X, configs['curd']['norm_Rs'][dataset_id])
-
         X_list.append(expand(X))
-        y_list.append(y.unsqueeze(1))
+        y_list.append(y)
 
-    curd = CURD(torch.cat(X_list, dim=0), torch.cat(y_list, dim=0).squeeze(1), no=configs['curd']['curd_no'], output_file_name=configs['curd_dir']+'curd_temp.txt')
+    curd = CURD(torch.cat(X_list, dim=0), torch.cat(y_list, dim=0), no=configs['curd']['curd_no'], output_file_name=configs['curd_dir']+'curd_temp.txt')
 
     # remove curd temp file
     if configs['curd']['rm_temp'] and os.path.exists(curd.get_output_file_name()):
@@ -76,7 +72,7 @@ def curd_process(configs):
     if os.path.exists(curd.get_output_file_name()):
         curd_outputs = np.loadtxt(curd.get_output_file_name())
     else:
-        curd_outputs = curd.process(configs['curd']['save_num']) # TODO: 内部函数使用np，适当重构为torch
+        curd_outputs = curd.process(configs['curd']['save_num'])
     curd_outputs = torch.tensor(curd_outputs)
 
     # perform regression evaluation and save data
@@ -84,7 +80,7 @@ def curd_process(configs):
     parameter_paths = []
     n = len(configs['curd']['datasets'])
     for epoch, row in tqdm(enumerate(curd_outputs), total=len(curd_outputs)):
-        plccs, srccs, beta_matrix = torch.zeros(n), torch.zeros(n), torch.zeros((n, 7))
+        plccs, srccs, beta_matrix = torch.zeros(n), torch.zeros(n), torch.zeros((n, configs['curd']['curd_no']))
         for i, X in enumerate(X_list):
             index = row[:configs['curd']['curd_no']].to(torch.int)
             beta_matrix[i] = regression(X, y_list[i], index)
@@ -109,18 +105,20 @@ def curd_process(configs):
 def enhanced_process(configs):
     if configs['enhanced']['multiscale_flag']:
         # load iqa method
-        methodloader = MethodLoader(configs['method'], configs['pyiqa'], configs['enhanced']['ckpt'])
-        iqa_method, transform_mode = methodloader()
+        iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['enhanced']['ckpt'])()
 
         # load dataset: img + y
-        dataLoader = DataLoader(configs['enhanced']['dataset'], folder_path[configs['enhanced']['dataset']], img_num[configs['enhanced']['dataset']], transform_mode = transform_mode)
-        data = dataLoader.get_data()
-
+        data = DataLoader(configs['enhanced']['dataset'], folder_path[configs['enhanced']['dataset']], img_num[configs['enhanced']['dataset']])()
+        
         # create framework
         frame = feature_framework(iqa_method, backbone=configs['backbone'])
 
         # evaluate the model
         X, y = frame.multiscale_loader(data)
+
+        y = normalize_y(y, configs['enhanced']['dataset'])
+        X = normalize_X(X)
+        
     else:
         matrix = load_matrix(configs['multiscale_dir'] + configs['enhanced']['dataset'] + '.pt')
         X, y = matrix[:, :-1], matrix[:, -1]
@@ -129,13 +127,12 @@ def enhanced_process(configs):
     index, beta = load_parameter(configs['ckpt_dir'] + configs['enhanced']['curd_file'])
     if beta.shape[0] != 1:
         index, beta = index, beta[0]
-    beta_index_to_function(index, beta)
+    # show the model and its latex expression
+    # beta_index_to_function(index, beta)
 
     # prediction
-    X = (expand(normalize_X(X, configs['enhanced']['norm_R'])) if configs['enhanced']['norm_R'] is not None else expand(X))
-    y = normalize_y(y, configs['enhanced']['dataset'])
-    y_hat = prediction(X, beta, index)
-    calculate_sp(y, y_hat.squeeze())
+    y_hat = prediction(expand(X), beta, index)
+    calculate_sp(y.squeeze(), y_hat.squeeze())
 
     # save matrix
     np.savetxt(configs['enhanced_dir'] + configs['enhanced']['enhanced_file'], np.column_stack((y.squeeze(), y_hat.squeeze())), fmt='%f', delimiter='\t')

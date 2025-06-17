@@ -23,17 +23,14 @@ class MethodLoader(object):
     def load_methods(self):
         if self.pyiqa:
             iqa_method = self.load_methods_pyiqa(self.method)
-            transform_mode = 'pyiqa'
-            return iqa_method, transform_mode
+            return iqa_method
         else:
             if self.method == 'maniqa':
                 iqa_method = self.load_maniqa(self.ckpt)
-                transform_mode = 'maniqa'
-                return iqa_method, transform_mode
+                return iqa_method
             elif self.method == 'arniqa':
                 iqa_method = self.load_arniqa()
-                transform_mode = 'arniqa'
-                return iqa_method, transform_mode
+                return iqa_method
             else:
                 print('The method is not supported.')
                 self.print_pyiqa_list()
@@ -47,19 +44,14 @@ class MethodLoader(object):
         iqa_net = pyiqa.create_metric(method)
         flag = 'lower' if iqa_net.lower_better else 'higher'
         print(f'The {flag} value of the metric {method} is better.')
-        def scaled_iqa_net(image, scale = 100):
-            with torch.no_grad():
-                score = iqa_net(image)
-                return score * scale
-        return scaled_iqa_net
+        return iqa_net
 
     def load_arniqa(self):
         model = torch.hub.load(repo_or_dir="miccunifi/ARNIQA", source="github", model="ARNIQA", regressor_dataset="kadid10k").eval().cuda()
-        def iqa_net(img, scale=1):
+        def iqa_net(img):
             with torch.no_grad(), torch.cuda.amp.autocast():
                 img_ds = F.interpolate(img, size=(img.size()[2] // 2, img.size()[3] // 2), mode='bilinear', align_corners=False)
-                score = model(img, img_ds, return_embedding=False, scale_score=True)
-                return score * scale
+                return  model(img, img_ds, return_embedding=False, scale_score=True)
         return iqa_net
 
     def load_maniqa(self, ckpt_path):

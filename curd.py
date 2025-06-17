@@ -21,7 +21,7 @@ class CURD:
         self.THRES = 0.9999
 
     def pearson_corr(self):
-         self.correlation_matrix = np.corrcoef(np.concatenate((self.Mssim_expand, self.mos[:, np.newaxis]), axis=1).T)
+         self.correlation_matrix = np.corrcoef(np.concatenate((self.Mssim_expand, self.mos), axis=1).T)
 
     def process(self, save_num):
         self.pearson_corr()

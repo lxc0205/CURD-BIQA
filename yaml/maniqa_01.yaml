@@ -44,9 +44,6 @@ curd:
           "./models/${method}/sota_ckpt_reproduce/ckpt_koniq-10k.pt"]
   # ckpts: None
   
-  # normalization ranges
-  norm_Rs: [1, 100, 9, 100]
-  
   # curd number
   curd_no: 7
   
@@ -72,11 +69,8 @@ enhanced:
   ckpt: "./models/maniqa/sota_ckpt_reproduce/ckpt_csiq.pt"
   # ckpt: None
 
-  # normalization range
-  norm_R: 1
-
   # curd model file
-  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_38511.pt"
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_7259.pt"
 
   # enhanced output file
   enhanced_file: 'enhanced_results_${enhanced.dataset}.txt'

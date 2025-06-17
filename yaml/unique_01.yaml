@@ -1,16 +1,16 @@
 # method
 method: "unique"
 pyiqa: true
-exam_id: "01"
+exam_id: "vgg_01"
 
 # mode
-mode: "origin"
-# mode: "curd"
+# mode: "origin"
+mode: "curd"
 # mode: "enhanced"
 
 # backbone
-# backbone: "vgg16"
-backbone: "vit"
+backbone: "vgg16"
+# backbone: "vit"
 
 # exam paths
 multiscale_dir: './outputs/${method}_${exam_id}/multiscale outputs/'
@@ -22,7 +22,7 @@ enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
 # origin mode parameters
 origin:
   # dataset
-  dataset: "csiq"
+  dataset: "kadid-10k"
 
   # ckpt
   ckpt: None
@@ -31,16 +31,13 @@ origin:
 # curd mode parameters
 curd:
   # use multiscale framework
-  multiscale_flag: false
+  multiscale_flag: true
 
   # datasets for training
   datasets: ["csiq", "live", "tid2013", "koniq-10k"]
   
   # ckpts for datasets
   ckpts: None
-  
-  # normalization ranges
-  norm_Rs: [1, 100, 9, 100]
   
   # curd number
   curd_no: 7
@@ -61,16 +58,12 @@ enhanced:
   multiscale_flag: true
 
   # dataset
-  dataset: "csiq"
+  dataset: "kadid-10k"
 
   # ckpt
   ckpt: None
-
-  # normalization range
-  norm_R: 1
-
   # curd model file
-  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_38511.pt"
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_30111.pt"
 
   # enhanced output file
   enhanced_file: 'enhanced_results_${enhanced.dataset}.txt'

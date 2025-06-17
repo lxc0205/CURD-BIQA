@@ -48,25 +48,14 @@ max_limit = {
 
 class DataLoader(object):
     """Dataset class for IQA databases"""
-    def __init__(self, dataset, path, img_indx, patch_num=1, batch_size=1, transform_mode='default'):
+    def __init__(self, dataset, path, img_indx, patch_num=1, batch_size=1):
         
         self.batch_size = batch_size
 
-        if transform_mode == 'pyiqa':
-            transforms = torchvision.transforms.Compose([
-                torchvision.transforms.Resize((224, 224)),
-                torchvision.transforms.ToTensor()])
-        elif transform_mode == 'maniqa' or transform_mode == 'arniqa':
-            transforms = torchvision.transforms.Compose([
-                torchvision.transforms.Resize((224, 224)),
-                torchvision.transforms.ToTensor(),
-                torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-            ])
-        elif transform_mode == 'default':
-            transforms = torchvision.transforms.Compose([
-                torchvision.transforms.ToTensor(),
-                torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-            ]) 
+        transforms = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+        ]) 
 
         if dataset == 'csiq':
             self.data = folders.CSIQFolder(
@@ -95,14 +84,17 @@ class DataLoader(object):
         else:
             raise ValueError(f"Unknown dataset: {dataset}")
 
-    def get_data(self):
+    def __call__(self):
         dataloader = torch.utils.data.DataLoader(self.data, batch_size=1, shuffle=False)
         return dataloader
 
-def normalize_X(X, range):
-    X = torch.clamp(X, 0, range) / range  # range into 0-1
+def normalize_X(X):
+    X = (X - X.min()) / (X.max() - X.min())
+    if X.min() < 0 or X.max() > 1:
+        X = torch.clamp(X, 0, 1)
     return X
 
+# y 的 范围由数据集的mos决定
 def normalize_y(y, datasets):
     normalized_y = y / max_limit[datasets]  # range into 0-1
     if datasets in ['csiq', 'live']:

@@ -1,10 +1,10 @@
 # method
 method: "unique"
 pyiqa: true
-exam_id: "vgg_01"
+exam_id: "01"
 
 # mode
-train_mode: true
+train_mode: false
 
 # backbone
 # backbone: "vgg16"
@@ -47,10 +47,11 @@ evaluate:
   multiscale_flag: true
 
   # dataset
-  dataset: "kadid-10k"
+  dataset: "csiq"
 
   # ckpt
   ckpt: None
+  
   # curd model file
   curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_30111.pt"
 

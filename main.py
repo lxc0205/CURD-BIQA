@@ -149,8 +149,7 @@ if __name__ == '__main__':
     with open(args.config, 'r') as file:
         configs = OmegaConf.load(file)
 
-    now = datetime.now()
-    print(now.strftime("%Y-%m-%d %H:%M:%S"))
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     create_directory(configs['multiscale_dir'])
     create_directory(configs['ckpt_dir'])

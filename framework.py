@@ -24,7 +24,7 @@ class feature_framework():
 
         # transform for deep feature maps
         self.transform = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((512, 384)),
+                    torchvision.transforms.Resize((224, 224)),
                     torchvision.transforms.RandomCrop(size=224),
                     torchvision.transforms.ToTensor()])
         self.to_pil = torchvision.transforms.ToPILImage()

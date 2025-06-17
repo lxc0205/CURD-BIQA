@@ -23,7 +23,7 @@ def train(configs):
             iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['train']['ckpts'][dataset_id])()
 
             # load dataset: img + y
-            data = DataLoader(dataset, folder_path[dataset], img_num[dataset])()
+            data = DataLoader(dataset, folder_path[dataset], img_num[dataset], pyiqa_transform=configs['pyiqa'])()
 
             # create framework
             frame = feature_framework(iqa_method, backbone=configs['backbone'])
@@ -95,7 +95,7 @@ def evaluate(configs):
     iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['evaluate']['ckpt'])()
 
     # load dataset: img + y
-    data = DataLoader(configs['evaluate']['dataset'], folder_path[configs['evaluate']['dataset']], img_num[configs['evaluate']['dataset']])()
+    data = DataLoader(configs['evaluate']['dataset'], folder_path[configs['evaluate']['dataset']], img_num[configs['evaluate']['dataset']], pyiqa_transform=configs['pyiqa'])()
 
     # create framework
     frame = feature_framework(iqa_method)  

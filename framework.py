@@ -31,9 +31,10 @@ class feature_framework():
 
     def extract_feature_VIT(self, image):
         convlayer_id = [1, 3, 5, 7, 9]
-
-        image = torch.as_tensor(image).cuda()
-        feature_maps = [image]
+        feature_maps = [torch.as_tensor(image).cuda()]
+        image = self.to_pil(image.cpu().squeeze(0))
+        image = self.transform(image)
+        image = torch.as_tensor(image).unsqueeze(0).cuda()        
         for i, layer in enumerate(self.net.children()):
             if layer.__class__.__name__ == 'Sequential':
                 for j, sub_layer in enumerate(layer.children()):

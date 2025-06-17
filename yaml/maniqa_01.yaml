@@ -4,7 +4,7 @@ pyiqa: false
 exam_id: "01"
 
 # mode
-train_mode: false
+train_mode: true
 
 # backbone
 # backbone: "vgg16"
@@ -20,7 +20,7 @@ enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
 # train mode parameters
 train:
   # use multiscale framework
-  multiscale_flag: false
+  multiscale_flag: true
 
   # datasets for training
   datasets: ["csiq", "live", "tid2013", "koniq-10k"]

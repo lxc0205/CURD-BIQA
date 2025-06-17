@@ -9,8 +9,8 @@ mode: "curd"
 # mode: "enhanced"
 
 # backbone
-# backbone: "vgg16"
-backbone: "vit"
+backbone: "vgg16"
+# backbone: "vit"
 
 # exam paths
 multiscale_dir: './outputs/${method}_${exam_id}/multiscale outputs/'
@@ -22,7 +22,7 @@ enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
 # origin mode parameters
 origin:
   # dataset
-  dataset: "kadid-10k"
+  dataset: "csiq"
 
   # ckpt
   ckpt: None
@@ -58,12 +58,12 @@ enhanced:
   multiscale_flag: true
 
   # dataset
-  dataset: "kadid-10k"
+  dataset: "csiq"
 
   # ckpt
   ckpt: None
   # curd model file
-  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_30111.pt"
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_44511.pt"
 
   # enhanced output file
   enhanced_file: 'enhanced_results_${enhanced.dataset}.txt'

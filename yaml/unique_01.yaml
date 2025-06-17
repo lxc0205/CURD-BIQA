@@ -4,9 +4,7 @@ pyiqa: true
 exam_id: "vgg_01"
 
 # mode
-# mode: "origin"
-mode: "curd"
-# mode: "enhanced"
+train_mode: true
 
 # backbone
 # backbone: "vgg16"
@@ -19,17 +17,8 @@ ckpt_dir: './outputs/${method}_${exam_id}/checkpoints/'
 enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
 
 
-# origin mode parameters
-origin:
-  # dataset
-  dataset: "kadid-10k"
-
-  # ckpt
-  ckpt: None
-
-
-# curd mode parameters
-curd:
+# train mode parameters
+train:
   # use multiscale framework
   multiscale_flag: true
 
@@ -49,11 +38,11 @@ curd:
   rm_temp: false
 
   # curd output file
-  curd_file: 'curd_${curd.datasets}.pt'
-  log_file: 'curd_${curd.datasets}.txt'
+  curd_file: 'curd_${train.datasets}.pt'
+  log_file: 'curd_${train.datasets}.txt'
 
-# enhanced mode parameters
-enhanced:
+# evaluation mode parameters
+evaluate:
   # use multiscale framework
   multiscale_flag: true
 
@@ -66,6 +55,6 @@ enhanced:
   curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_30111.pt"
 
   # enhanced output file
-  enhanced_file: 'enhanced_results_${enhanced.dataset}.txt'
+  enhanced_file: 'enhanced_results_${evaluate.dataset}.txt'
 
   

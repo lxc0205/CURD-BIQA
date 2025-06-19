@@ -3,17 +3,17 @@ import torch
 import numpy as np
 from curd import sort
 
-def save_parameter(index, beta, file_path='model_params.pt', show = True):
-    params = {'index': index, 'beta': beta}
-    torch.save(params, file_path)
-    if show:
-        print(f"Parameters saved to {file_path}")
-
 def load_parameter(file_path='model_params.pt'):
     params = torch.load(file_path)
     index = params["index"]
-    beta = params["beta"]    
-    return index, beta
+    coef = params["coef"]    
+    return index, coef
+
+def save_parameter(index, coef, file_path='model_params.pt', show = True):
+    params = {'index': index, 'coef': coef}
+    torch.save(params, file_path)
+    if show:
+        print(f"Parameters saved to {file_path}")
 
 def save_matrix(matrix, file_path='matrix.pt', show = True):
     torch.save(matrix, file_path)

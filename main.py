@@ -4,13 +4,14 @@ import argparse
 import warnings
 import numpy as np
 from tqdm import tqdm
+from curd import CURD, expand
 from datetime import datetime
 from omegaconf import OmegaConf
 from method_loader import MethodLoader
 from framework import feature_framework
 from data.dataLoader import DataLoader, normalize_X, normalize_y, folder_path, img_num
-from curd import CURD, calculate_sp, regression, prediction, expand, beta_index_to_function
-from utils import save_parameter, load_parameter, save_matrix, load_matrix, save_logs, create_directory
+from utils import load_parameter, save_parameter, save_matrix, load_parameter, save_matrix, load_matrix, save_logs, create_directory
+from regressor import regression, prediction, regression_ridge, prediction_ridge, coef_index_to_function, calculate_sp, calculate_mse_r2 
 
 
 def train(configs):
@@ -21,19 +22,15 @@ def train(configs):
         if configs['train']['multiscale_flag']:
             # load iqa method
             iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['train']['ckpts'][dataset_id])()
-
             # load dataset: img + y
             data = DataLoader(dataset, folder_path[dataset], img_num[dataset], pyiqa_transform=configs['pyiqa'])()
-
             # create framework
             frame = feature_framework(iqa_method, backbone=configs['backbone'])
-
             # extract multiscale features
             X, y = frame.multiscale_loader(data)
-
+            # normalize X and y
             y = normalize_y(y, configs['train']['datasets'][dataset_id])
             X = normalize_X(X)
- 
             # save matrix
             matrix = torch.cat((X, y), dim=1)
             save_matrix(matrix, configs['multiscale_dir'] + dataset + '.pt')
@@ -65,11 +62,20 @@ def train(configs):
     parameter_paths = []
     n = len(configs['train']['datasets'])
     for epoch, row in tqdm(enumerate(curd_outputs), total=len(curd_outputs)):
-        plccs, srccs, beta_matrix = torch.zeros(n), torch.zeros(n), torch.zeros((n, configs['train']['curd_no']))
+        plccs, srccs = torch.zeros(n), torch.zeros(n)
+        coef_matrix = []
         for i, X in enumerate(X_list):
             index = row[:configs['train']['curd_no']].to(torch.int)
-            beta_matrix[i] = regression(X, y_list[i], index)
-            y_hat = prediction(X, beta_matrix[i], index)
+            if configs['regressor'] == 'svd':
+                # svd regression
+                coef = regression(X, y_list[i], index)
+                coef_matrix.append(coef)
+                y_hat = prediction(X, coef, index)
+            elif configs['regressor'] == 'ridge':
+                # ridge regression
+                coef = regression_ridge(X, y_list[i], index)
+                coef_matrix.append(coef)
+                y_hat = prediction_ridge(X, coef, index)
             plccs[i], srccs[i], err_flag = calculate_sp(y_list[i].squeeze(), y_hat.squeeze(), show=False)
             if err_flag:
                 break
@@ -80,7 +86,8 @@ def train(configs):
         
         parameter_path = configs['ckpt_dir'] + configs['train']['curd_file'][:-3] + '_' + str(epoch) + '.pt'
         parameter_paths.append(parameter_path)
-        save_parameter(index, beta = beta_matrix, file_path = parameter_path, show = False)
+        save_parameter(index, coef=coef_matrix, file_path=parameter_path, show=False)
+
 
     # save logs
     save_logs(logs, configs['curd_dir'] + configs['train']['log_file'], configs['train']['save_num'], sort_num = 9)
@@ -90,16 +97,12 @@ def train(configs):
 def evaluate(configs):
     # print method name and dataset name
     print(f"Evaluating method: {configs['method']},\tEvaluating dataset: {configs['evaluate']['dataset']}")
-
     # load iqa method
     iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['evaluate']['ckpt'])()
-
     # load dataset: img + y
     data = DataLoader(configs['evaluate']['dataset'], folder_path[configs['evaluate']['dataset']], img_num[configs['evaluate']['dataset']], pyiqa_transform=configs['pyiqa'])()
-
     # create framework
-    frame = feature_framework(iqa_method)  
-
+    frame = feature_framework(iqa_method)
     # evaluate the model
     X, y = frame.origin_loader(data)
     print('Origin method srcc and plcc:')
@@ -108,30 +111,27 @@ def evaluate(configs):
     if configs['evaluate']['multiscale_flag']:
         # create framework
         frame = feature_framework(iqa_method, backbone=configs['backbone'])
-
         # evaluate the model
         X, y = frame.multiscale_loader(data)
-
+        # normalize X and y
         y = normalize_y(y, configs['evaluate']['dataset'])
         X = normalize_X(X)
-        
     else:
         matrix = load_matrix(configs['multiscale_dir'] + configs['evaluate']['dataset'] + '.pt')
         X, y = matrix[:, :-1], matrix[:, -1]
-
-    # load parameters: index, beta
-    index, beta = load_parameter(configs['ckpt_dir'] + configs['evaluate']['curd_file'])
-    if beta.shape[0] != 1:
-        index, beta = index, beta[0]
-
-    # prediction
-    y_hat = prediction(expand(X), beta, index)
+    # load parameters: index, coef and prediction
+    index, coef = load_parameter(configs['ckpt_dir'] + configs['evaluate']['curd_file'])
+    coef = coef[0] if isinstance(coef, list) else coef
+    if configs['regressor'] == 'svd':
+        y_hat = prediction(expand(X), coef, index)
+    elif configs['regressor'] == 'ridge':
+        y_hat = prediction_ridge(expand(X), coef, index)
     print('Enhanced method srcc and plcc:')
     calculate_sp(y.squeeze(), y_hat.squeeze())
-
+    calculate_mse_r2(y.squeeze(), y_hat.squeeze())
     # show the model and its latex expression
-    # beta_index_to_function(index, beta)
-
+    if configs['regressor'] == 'svd':
+        coef_index_to_function(index, coef)
     # save matrix
     np.savetxt(configs['enhanced_dir'] + configs['evaluate']['enhanced_file'], np.column_stack((y.squeeze(), y_hat.squeeze())), fmt='%f', delimiter='\t')
 

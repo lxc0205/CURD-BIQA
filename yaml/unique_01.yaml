@@ -5,10 +5,15 @@ exam_id: "01"
 
 # mode
 train_mode: true
+# train_mode: false
 
 # backbone
 # backbone: "vgg16"
 backbone: "vit"
+
+# regressor
+# regressor: "svd"
+regressor: "ridge" 
 
 # exam paths
 multiscale_dir: './outputs/${method}_${exam_id}/multiscale outputs/'
@@ -21,22 +26,16 @@ enhanced_dir: './outputs/${method}_${exam_id}/enhanced outputs/'
 train:
   # use multiscale framework
   multiscale_flag: true
-
   # datasets for training
   datasets: ["csiq", "live", "tid2013", "koniq-10k"]
-  
   # ckpts for datasets
   ckpts: None
-  
   # curd number
   curd_no: 7
-  
   # save number
   save_num: 50000
-  
   # remove temporary file flag
   rm_temp: false
-
   # curd output file
   curd_file: 'curd_${train.datasets}.pt'
   log_file: 'curd_${train.datasets}.txt'
@@ -45,16 +44,19 @@ train:
 evaluate:
   # use multiscale framework
   multiscale_flag: true
-
   # dataset
-  dataset: "csiq"
-
+  # dataset: "csiq"
+  # dataset: "live"
+  # dataset: "tid2013"
+  # dataset: "koniq-10k"
+  # dataset: "kadid-10k"
+  # dataset: "pipal"
+  dataset: "spaq"
+  # dataset: "agiqa-3k"
   # ckpt
   ckpt: None
-
   # curd model file
-  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_30111.pt"
-
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_46181.pt"
   # enhanced output file
   enhanced_file: 'enhanced_results_${evaluate.dataset}.txt'
 

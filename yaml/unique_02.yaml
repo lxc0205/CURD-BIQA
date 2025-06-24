@@ -1,7 +1,7 @@
 # method
-method: "maniqa"
-pyiqa: false
-exam_id: "01"
+method: "unique"
+pyiqa: true
+exam_id: "02"
 
 # mode
 # train_mode: true
@@ -13,7 +13,7 @@ backbone: "vit"
 
 # regressor
 # regressor: "svd"
-regressor: "ridge"
+regressor: "ridge" 
 
 # exam paths
 multiscale_dir: './outputs/${method}_${exam_id}/multiscale outputs/'
@@ -27,23 +27,18 @@ train:
   # use multiscale framework
   multiscale_flag: false
   # datasets for training
-  datasets: ["csiq", "live", "tid2013", "koniq-10k"]
-  # ckpts for datasets, if None, ckpts = None
-  ckpts: ["./models/${method}/sota_ckpt_reproduce/ckpt_csiq.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_live.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_tid2013.pt",
-          "./models/${method}/sota_ckpt_reproduce/ckpt_koniq-10k.pt"]
-  # ckpts: null
+  datasets: ["csiq", "live", "tid2013", "koniq-10k", "kadid-10k", "pipal", "spaq", "agiqa-3k"]
+  # ckpts for datasets
+  ckpts: null
   # curd number
   curd_no: 7
-  # save number88
+  # save number
   save_num: 50000
   # remove temporary file flag
   rm_temp: false
   # curd output file
   curd_file: 'curd_${train.datasets}.pt'
   log_file: 'curd_${train.datasets}.txt'
-
 
 # evaluation mode parameters
 evaluate:
@@ -53,17 +48,14 @@ evaluate:
   # dataset: "csiq"
   # dataset: "live"
   # dataset: "tid2013"
-  # dataset: "koniq-10k"
-  dataset: "kadid-10k"
+  dataset: "koniq-10k"
+  # dataset: "kadid-10k"
   # dataset: "pipal"
   # dataset: "spaq"
   # dataset: "agiqa-3k"
   # ckpt
-  ckpt: "./models/maniqa/sota_ckpt_reproduce/ckpt_csiq.pt"
-  # ckpt: null
+  ckpt: null
   # curd model file
-  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k']_46153.pt"
+  curd_file: "curd_['csiq', 'live', 'tid2013', 'koniq-10k', 'kadid-10k', 'pipal', 'spaq', 'agiqa-3k']_30230.pt"
   # enhanced output file
   enhanced_file: 'enhanced_results_${evaluate.dataset}.txt'
-
-  

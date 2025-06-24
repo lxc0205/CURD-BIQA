@@ -98,8 +98,14 @@ def normalize_X(X):
     return X
 
 # y 的 范围由数据集的mos决定
-def normalize_y(y, datasets):
-    normalized_y = y / max_limit[datasets]  # range into 0-1
-    if datasets in ['csiq', 'live']:
-        normalized_y = 1 - normalized_y  # negation
-    return normalized_y
+# def normalize_y(y, datasets):
+#     normalized_y = y / max_limit[datasets]  # range into 0-1
+#     if datasets in ['csiq', 'live']:
+#         normalized_y = 1 - normalized_y  # negation
+#     return normalized_y
+
+def normalize_y(y, dataset):
+    y = (y - y.min()) / (y.max() - y.min())
+    if y.min() < 0 or y.max() > 1:
+        y = torch.clamp(y, 0, 1)
+    return (1.0-y) if dataset in ['csiq', 'live'] else y

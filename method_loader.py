@@ -57,7 +57,7 @@ class MethodLoader(object):
     def load_maniqa(self, ckpt_path):
         if './models/' not in sys.path: sys.path.insert(0, './models/')
         if './models/maniqa' not in sys.path: sys.path.insert(0, './models/maniqa')
-        from maniqa.models.maniqa import MANIQA
+        from maniqa.models.maniqa import MANIQA # type: ignore
         iqa_net = MANIQA(embed_dim=768, num_outputs=1, dim_mlp=768, patch_size=8, img_size=224, window_size=4, depths=[2,2], num_heads=[4,4], num_tab=2, scale=0.8)
         iqa_net.load_state_dict(torch.load(ckpt_path))
         iqa_net = iqa_net.cuda()

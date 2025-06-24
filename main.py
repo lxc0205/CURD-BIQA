@@ -17,11 +17,13 @@ from regressor import regression, prediction, regression_ridge, prediction_ridge
 def train(configs):
     # load multiscale score
     X_list, y_list = [], []
-
     for dataset_id, dataset in enumerate(configs['train']['datasets']):
         if configs['train']['multiscale_flag']:
             # load iqa method
-            iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['train']['ckpts'][dataset_id])()
+            if configs['train']['ckpts'] is None:
+                iqa_method = MethodLoader(configs['method'], configs['pyiqa'])()
+            else:
+                iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['train']['ckpts'][dataset_id])()
             # load dataset: img + y
             data = DataLoader(dataset, folder_path[dataset], img_num[dataset], pyiqa_transform=configs['pyiqa'])()
             # create framework
@@ -43,14 +45,11 @@ def train(configs):
         X_list.append(expand(X))
         y_list.append(y)
 
+    # 1) remove curd temp file, 2) load curd temp file OR process curd
     curd = CURD(torch.cat(X_list, dim=0), torch.cat(y_list, dim=0), no=configs['train']['curd_no'], output_file_name=configs['curd_dir']+'curd_temp.txt')
-
-    # remove curd temp file
     if configs['train']['rm_temp'] and os.path.exists(curd.get_output_file_name()):
         print('remove curd temp files...')
         os.remove(curd.get_output_file_name())
-    
-    # load curd temp file
     if os.path.exists(curd.get_output_file_name()):
         curd_outputs = np.loadtxt(curd.get_output_file_name())
     else:
@@ -58,9 +57,9 @@ def train(configs):
     curd_outputs = torch.tensor(curd_outputs)
 
     # perform regression evaluation and save data
-    logs = torch.zeros((configs['train']['save_num'], 11)) # sw(0) srcc(1-4) plcc(5-8) sum/8(9) epoch(10)
-    parameter_paths = []
     n = len(configs['train']['datasets'])
+    logs = torch.zeros((configs['train']['save_num'], 2*n+3)) # sw(0) srcc(1 - n) plcc(n+1 - 2n) sum/8(2n+1) epoch(2n+2)
+    parameter_paths = []
     for epoch, row in tqdm(enumerate(curd_outputs), total=len(curd_outputs)):
         plccs, srccs = torch.zeros(n), torch.zeros(n)
         coef_matrix = []
@@ -79,18 +78,15 @@ def train(configs):
             plccs[i], srccs[i], err_flag = calculate_sp(y_list[i].squeeze(), y_hat.squeeze(), show=False)
             if err_flag:
                 break
-
         # log and save parameter
         if not err_flag:
             logs[epoch] = torch.cat((row[configs['train']['curd_no']].unsqueeze(0), plccs, srccs, torch.tensor([(plccs.sum() + srccs.sum()) / 8]), torch.tensor([epoch])))
-        
         parameter_path = configs['ckpt_dir'] + configs['train']['curd_file'][:-3] + '_' + str(epoch) + '.pt'
         parameter_paths.append(parameter_path)
         save_parameter(index, coef=coef_matrix, file_path=parameter_path, show=False)
 
-
     # save logs
-    save_logs(logs, configs['curd_dir'] + configs['train']['log_file'], configs['train']['save_num'], sort_num = 9)
+    save_logs(logs, configs['curd_dir'] + configs['train']['log_file'], configs['train']['save_num'], sort_num = (2*n+1))
     print('The curd training is finished!')
 
 
@@ -98,7 +94,10 @@ def evaluate(configs):
     # print method name and dataset name
     print(f"Evaluating method: {configs['method']},\tEvaluating dataset: {configs['evaluate']['dataset']}")
     # load iqa method
-    iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['evaluate']['ckpt'])()
+    if configs['evaluate']['ckpt'] is None:
+        iqa_method = MethodLoader(configs['method'], configs['pyiqa'])()
+    else:
+        iqa_method = MethodLoader(configs['method'], configs['pyiqa'], configs['evaluate']['ckpt'])()
     # load dataset: img + y
     data = DataLoader(configs['evaluate']['dataset'], folder_path[configs['evaluate']['dataset']], img_num[configs['evaluate']['dataset']], pyiqa_transform=configs['pyiqa'])()
     # create framework
@@ -116,6 +115,11 @@ def evaluate(configs):
         # normalize X and y
         y = normalize_y(y, configs['evaluate']['dataset'])
         X = normalize_X(X)
+        # save matrix
+        matrix = torch.cat((X, y), dim=1)
+        save_matrix(matrix, configs['multiscale_dir'] + configs['evaluate']['dataset'] + '.pt')
+        # save matrix to txt, for debugging, delete it after debugging
+        np.savetxt(configs['multiscale_dir'] + configs['evaluate']['dataset'] + '.txt', np.array(matrix), fmt='%f', delimiter='\t')
     else:
         matrix = load_matrix(configs['multiscale_dir'] + configs['evaluate']['dataset'] + '.pt')
         X, y = matrix[:, :-1], matrix[:, -1]

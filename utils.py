@@ -26,7 +26,7 @@ def load_matrix(file_path='matrix.pt'):
 
 def save_logs(logs_matrix, file_name, save_num, sort_num = 9):
     logs = sort(np.array(logs_matrix, dtype=float), order="descending", row=sort_num)[:save_num, :]
-    np.savetxt(file_name, logs, fmt=['%f']*10 + ['%d']*1, delimiter=' ')
+    np.savetxt(file_name, logs, fmt=['%f']*(sort_num+1) + ['%d']*1, delimiter=' ')
 
 def create_directory(path):
     if not os.path.exists(path): 
